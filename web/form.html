@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GEON Builder</title>
+<style>
+  /* ── Theme variables (shared with index.html) ─────────── */
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #242836;
+    --border: #2e3344;
+    --text: #e1e4ed;
+    --text-dim: #8b8fa3;
+    --accent: #6c8cff;
+    --accent-dim: #4a6ae0;
+    --green: #4ade80;
+    --orange: #fb923c;
+    --red: #f87171;
+    --shadow: rgba(0,0,0,0.4);
+    --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --syn-key: #6c8cff;
+    --syn-value: #e1e4ed;
+    --syn-list: #4ade80;
+    --syn-coord: #fb923c;
+    --syn-comment: #8b8fa3;
+    --syn-section: #c084fc;
+  }
+
+  :root.light {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface2: #ebedf2;
+    --border: #d1d5e0;
+    --text: #1a1d27;
+    --text-dim: #5c6070;
+    --accent: #4a6ae0;
+    --accent-dim: #3a58c4;
+    --green: #16a34a;
+    --orange: #d97706;
+    --red: #dc2626;
+    --shadow: rgba(0,0,0,0.1);
+    --syn-key: #2f54c9;
+    --syn-value: #1a1d27;
+    --syn-list: #16713a;
+    --syn-coord: #b45309;
+    --syn-comment: #6b7085;
+    --syn-section: #7c3aed;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: background 0.25s, color 0.25s;
+  }
+
+  /* ── Header ──────────────────────────────────────────── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+  header .logo { height: 44px; width: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 6px 18px var(--shadow); }
+  header h1 span { color: var(--accent); }
+  header .subtitle { color: var(--text-dim); font-size: 13px; flex: 1; }
+
+  .nav-links { display: flex; gap: 4px; }
+
+  .nav-link {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    font-family: var(--font-sans);
+  }
+
+  .nav-link:hover { color: var(--text); border-color: var(--accent); }
+  .nav-link.active { color: var(--accent); border-color: var(--accent); background: var(--bg); }
+
+  .theme-toggle {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    width: 34px; height: 34px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+
+  .theme-toggle:hover { color: var(--text); border-color: var(--accent); }
+
+  /* ── Main layout ─────────────────────────────────────── */
+  .main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ── Form panel ──────────────────────────────────────── */
+  .form-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px 40px;
+    min-width: 0;
+  }
+
+  .form-panel::-webkit-scrollbar { width: 8px; }
+  .form-panel::-webkit-scrollbar-track { background: transparent; }
+  .form-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .form-panel::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  /* ── Section ─────────────────────────────────────────── */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .section-header:hover { background: var(--surface2); }
+
+  .section-header .chevron {
+    font-size: 10px;
+    color: var(--text-dim);
+    transition: transform 0.2s;
+    width: 16px;
+    text-align: center;
+  }
+
+  .section.collapsed .chevron { transform: rotate(-90deg); }
+  .section.collapsed .section-body { display: none; }
+
+  .section-header h2 {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .section-header .section-tag {
+    font-size: 10px;
+    color: var(--text-dim);
+    background: var(--surface2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .section-header .required-tag {
+    font-size: 10px;
+    color: var(--red);
+    background: rgba(248, 113, 113, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
+
+  .section-body { padding: 0 16px 16px; }
+
+  /* ── Form fields ─────────────────────────────────────── */
+  .field { margin-top: 12px; }
+
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dim);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .field label .hint {
+    text-transform: none;
+    font-weight: 400;
+    letter-spacing: 0;
+    opacity: 0.7;
+    font-size: 11px;
+    margin-left: 4px;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    transition: border-color 0.15s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  textarea {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 60px;
+  }
+
+  .inline-fields {
+    display: flex;
+    gap: 10px;
+  }
+
+  .inline-fields .field { flex: 1; }
+
+  /* ── Experience grid ─────────────────────────────────── */
+  .exp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .exp-grid .field { margin-top: 0; }
+
+  /* ── Purpose chips ───────────────────────────────────── */
+  .chip-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .chip-group-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    width: 100%;
+    margin-top: 8px;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .chip-group-label:first-child { margin-top: 0; }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    transition: all 0.15s;
+  }
+
+  .chip:hover { border-color: var(--accent); color: var(--text); }
+
+  .chip.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* ── List editor ─────────────────────────────────────── */
+  .list-editor { margin-top: 6px; }
+
+  .list-editor .list-items { display: flex; flex-direction: column; gap: 4px; }
+
+  .list-item {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .list-item input { flex: 1; }
+
+  .list-item .remove-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    line-height: 1;
+  }
+
+  .list-item .remove-btn:hover { color: var(--red); background: rgba(248, 113, 113, 0.1); }
+
+  .add-btn {
+    background: var(--surface2);
+    border: 1px dashed var(--border);
+    color: var(--text-dim);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: all 0.15s;
+    font-family: var(--font-sans);
+  }
+
+  .add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── KV editor ───────────────────────────────────────── */
+  .kv-item {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .kv-item input:first-child { flex: 0.4; }
+  .kv-item input:nth-child(2) { flex: 0.6; }
+
+  /* ── Right output panel ──────────────────────────────── */
+  .resize-handle {
+    width: 4px;
+    cursor: col-resize;
+    background: var(--border);
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+
+  .resize-handle:hover { background: var(--accent); }
+
+  .right-panel {
+    width: 480px;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .panel-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+    font-family: var(--font-sans);
+  }
+
+  .btn:hover { background: var(--accent-dim); }
+
+  .btn-sm { font-size: 12px; padding: 5px 12px; }
+
+  .btn-secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); background: var(--surface); }
+
+  .output-area {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+  }
+
+  .output-area pre {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .output-area .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-dim);
+    padding: 40px;
+    text-align: center;
+  }
+
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+  .empty-state p { font-size: 14px; line-height: 1.6; max-width: 280px; }
+
+  .validation-bar {
+    padding: 8px 12px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .badge { padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+  .badge-ok { background: rgba(74, 222, 128, 0.15); color: var(--green); }
+  .badge-warn { background: rgba(251, 146, 60, 0.15); color: var(--orange); }
+  .badge-err { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+
+  /* ── Syntax highlighting ─────────────────────────────── */
+  .geon-key { color: var(--syn-key); font-weight: 600; }
+  .geon-value { color: var(--syn-value); }
+  .geon-list { color: var(--syn-list); }
+  .geon-coord { color: var(--syn-coord); }
+  .geon-section { color: var(--syn-section); font-weight: 600; }
+
+  /* ── Status bar ──────────────────────────────────────── */
+  .status-bar {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 6px 16px;
+    font-size: 11px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .status-bar .sep { color: var(--border); }
+
+  /* ── Custom purpose input ────────────────────────────── */
+  .custom-purpose-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    width: 100%;
+  }
+
+  .custom-purpose-row input { flex: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <img class="logo" src="../assets/logo.png" alt="GEON logo">
+  <h1><span>GEON</span> Builder</h1>
+  <span class="subtitle">Build a GEON place description from scratch</span>
+  <nav class="nav-links">
+    <a class="nav-link" href="index.html">About</a>
+    <a class="nav-link" href="explore.html">Map</a>
+    <a class="nav-link active" href="form.html">Build</a>
+  </nav>
+  <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark theme">&#9790;</button>
+</header>
+
+<div class="main">
+  <div class="form-panel" id="formPanel">
+
+    <!-- ── Identity (required) ─────────────────────── -->
+    <div class="section" id="secIdentity">
+      <div class="section-header" onclick="toggleSection('secIdentity')">
+        <span class="chevron">&#9660;</span>
+        <h2>Identity</h2>
+        <span class="required-tag">Required</span>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>PLACE <span class="hint">- name of the place</span></label>
+          <input type="text" id="fPlace" placeholder="e.g. Nottingham Market Square" oninput="rebuild()">
+        </div>
+        <div class="inline-fields">
+          <div class="field">
+            <label>TYPE</label>
+            <select id="fType" onchange="rebuild()">
+              <option value="">-- select --</option>
+              <option value="public_space">public_space</option>
+              <option value="street">street</option>
+              <option value="building">building</option>
+              <option value="transport_hub">transport_hub</option>
+              <option value="infrastructure">infrastructure</option>
+              <option value="natural_feature">natural_feature</option>
+              <option value="district">district</option>
+              <option value="landmark">landmark</option>
+              <option value="threshold">threshold</option>
+              <option value="hybrid">hybrid</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>ID <span class="hint">- optional identifier</span></label>
+            <input type="text" id="fId" placeholder="e.g. osm:way/12345" oninput="rebuild()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Geometry ─────────────────────────────────── -->
+    <div class="section" id="secGeometry">
+      <div class="section-header" onclick="toggleSection('secGeometry')">
+        <span class="chevron">&#9660;</span>
+        <h2>Geometry</h2>
+        <span class="required-tag">Required</span>
+        <span class="section-tag">Location</span>
+      </div>
+      <div class="section-body">
+        <div class="inline-fields">
+          <div class="field">
+            <label>Latitude</label>
+            <input type="number" id="fLat" step="any" placeholder="52.9548" oninput="rebuild()">
+          </div>
+          <div class="field">
+            <label>Longitude</label>
+            <input type="number" id="fLon" step="any" placeholder="-1.1581" oninput="rebuild()">
+          </div>
+        </div>
+        <div class="field">
+          <label>BOUNDARY <span class="hint">- one coordinate per line: lat, lon</span></label>
+          <textarea id="fBoundary" rows="4" placeholder="52.9552, -1.1590&#10;52.9552, -1.1570&#10;52.9544, -1.1570&#10;52.9544, -1.1590&#10;52.9552, -1.1590" oninput="rebuild()"></textarea>
+        </div>
+        <div class="inline-fields">
+          <div class="field">
+            <label>AREA</label>
+            <input type="text" id="fArea" placeholder="e.g. 22000 sqm" oninput="rebuild()">
+          </div>
+          <div class="field">
+            <label>ELEVATION</label>
+            <input type="text" id="fElevation" placeholder="e.g. 58m above sea level" oninput="rebuild()">
+          </div>
+        </div>
+        <div class="field">
+          <label>EXTENT <span class="hint">- bounding box: north, south, east, west</span></label>
+          <div class="inline-fields">
+            <div class="field"><label style="font-size:11px">North</label><input type="number" id="fExtN" step="any" placeholder="52.96" oninput="rebuild()"></div>
+            <div class="field"><label style="font-size:11px">South</label><input type="number" id="fExtS" step="any" placeholder="52.95" oninput="rebuild()"></div>
+            <div class="field"><label style="font-size:11px">East</label><input type="number" id="fExtE" step="any" placeholder="-1.15" oninput="rebuild()"></div>
+            <div class="field"><label style="font-size:11px">West</label><input type="number" id="fExtW" step="any" placeholder="-1.16" oninput="rebuild()"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Purpose ─────────────────────────────────── -->
+    <div class="section" id="secPurpose">
+      <div class="section-header" onclick="toggleSection('secPurpose')">
+        <span class="chevron">&#9660;</span>
+        <h2>Purpose</h2>
+        <span class="section-tag">Semantic</span>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>Select purposes <span class="hint">- click to toggle</span></label>
+          <div class="chip-grid" id="purposeChips"></div>
+          <div class="custom-purpose-row">
+            <input type="text" id="customPurpose" placeholder="Add custom purpose...">
+            <button class="btn btn-sm btn-secondary" onclick="addCustomPurpose()">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Experience ──────────────────────────────── -->
+    <div class="section" id="secExperience">
+      <div class="section-header" onclick="toggleSection('secExperience')">
+        <span class="chevron">&#9660;</span>
+        <h2>Experience</h2>
+        <span class="section-tag">Semantic</span>
+      </div>
+      <div class="section-body">
+        <div class="exp-grid" id="expGrid"></div>
+      </div>
+    </div>
+
+    <!-- ── Character ───────────────────────────────── -->
+    <div class="section" id="secCharacter">
+      <div class="section-header" onclick="toggleSection('secCharacter')">
+        <span class="chevron">&#9660;</span>
+        <h2>Character</h2>
+        <span class="section-tag">Semantic</span>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>Descriptive traits <span class="hint">- one per line</span></label>
+          <textarea id="fCharacter" rows="3" placeholder="Georgian architecture&#10;tree-lined perimeter&#10;civic focal point" oninput="rebuild()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Adjacencies ─────────────────────────────── -->
+    <div class="section" id="secAdjacencies">
+      <div class="section-header" onclick="toggleSection('secAdjacencies')">
+        <span class="chevron">&#9660;</span>
+        <h2>Adjacencies</h2>
+        <span class="section-tag">Relational</span>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>Neighbouring places <span class="hint">- one per line, include direction/distance</span></label>
+          <textarea id="fAdjacencies" rows="3" placeholder="Council House (immediate west)&#10;Exchange Arcade (southeast corner)&#10;Old Market Square (50m north)" oninput="rebuild()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Connectivity ────────────────────────────── -->
+    <div class="section" id="secConnectivity">
+      <div class="section-header" onclick="toggleSection('secConnectivity')">
+        <span class="chevron">&#9660;</span>
+        <h2>Connectivity</h2>
+        <span class="section-tag">Relational</span>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>Network connections <span class="hint">- key: value pairs</span></label>
+          <div class="list-editor" id="connEditor">
+            <div class="list-items" id="connItems"></div>
+            <button class="add-btn" onclick="addKVItem('connItems')">+ Add connection</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Contains ────────────────────────────────── -->
+    <div class="section collapsed" id="secContains">
+      <div class="section-header" onclick="toggleSection('secContains')">
+        <span class="chevron">&#9660;</span>
+        <h2>Contains</h2>
+        <span class="section-tag">Relational</span>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>Nested sub-places <span class="hint">- one name per line (simplified)</span></label>
+          <textarea id="fContains" rows="3" placeholder="North Wing&#10;Main Atrium&#10;South Courtyard" oninput="rebuild()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Part Of / Viewsheds ─────────────────────── -->
+    <div class="section collapsed" id="secRelOther">
+      <div class="section-header" onclick="toggleSection('secRelOther')">
+        <span class="chevron">&#9660;</span>
+        <h2>Part Of / Viewsheds</h2>
+        <span class="section-tag">Relational</span>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>PART_OF <span class="hint">- parent place</span></label>
+          <input type="text" id="fPartOf" placeholder="e.g. Lace Market district" oninput="rebuild()">
+        </div>
+        <div class="field">
+          <label>VIEWSHEDS <span class="hint">- visible landmarks, one per line</span></label>
+          <textarea id="fViewsheds" rows="3" placeholder="Nottingham Castle (1.2km NW)&#10;St Mary's Church spire (300m E)" oninput="rebuild()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Temporal ────────────────────────────────── -->
+    <div class="section collapsed" id="secTemporal">
+      <div class="section-header" onclick="toggleSection('secTemporal')">
+        <span class="chevron">&#9660;</span>
+        <h2>Temporal</h2>
+        <span class="section-tag">Temporal</span>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>Time-varying patterns <span class="hint">- key: value pairs</span></label>
+          <div class="list-editor" id="tempEditor">
+            <div class="list-items" id="tempItems"></div>
+            <button class="add-btn" onclick="addKVItem('tempItems')">+ Add temporal field</button>
+          </div>
+        </div>
+        <div class="field" style="margin-top:16px">
+          <label>LIFESPAN <span class="hint">- key: value pairs</span></label>
+          <div class="list-editor" id="lifespanEditor">
+            <div class="list-items" id="lifespanItems"></div>
+            <button class="add-btn" onclick="addKVItem('lifespanItems')">+ Add lifespan field</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Source / Confidence / Updated ────────────── -->
+    <div class="section collapsed" id="secProvenance">
+      <div class="section-header" onclick="toggleSection('secProvenance')">
+        <span class="chevron">&#9660;</span>
+        <h2>Provenance</h2>
+        <span class="section-tag">Data</span>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>SOURCE <span class="hint">- one source per line</span></label>
+          <textarea id="fSource" rows="2" placeholder="field survey (2025-01)&#10;OpenStreetMap" oninput="rebuild()"></textarea>
+        </div>
+        <div class="field">
+          <label>CONFIDENCE <span class="hint">- key: value pairs</span></label>
+          <div class="list-editor" id="confEditor">
+            <div class="list-items" id="confItems"></div>
+            <button class="add-btn" onclick="addKVItem('confItems')">+ Add confidence field</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>UPDATED <span class="hint">- ISO 8601 date</span></label>
+          <input type="date" id="fUpdated" oninput="rebuild()">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Extended / Domain ────────────────────────── -->
+    <div class="section collapsed" id="secExtended">
+      <div class="section-header" onclick="toggleSection('secExtended')">
+        <span class="chevron">&#9660;</span>
+        <h2>Extended Fields</h2>
+        <span class="section-tag">Domain</span>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>BUILT_FORM <span class="hint">- key: value pairs</span></label>
+          <div class="list-editor">
+            <div class="list-items" id="builtFormItems"></div>
+            <button class="add-btn" onclick="addKVItem('builtFormItems')">+ Add field</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>ECOLOGY <span class="hint">- key: value pairs</span></label>
+          <div class="list-editor">
+            <div class="list-items" id="ecologyItems"></div>
+            <button class="add-btn" onclick="addKVItem('ecologyItems')">+ Add field</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>INFRASTRUCTURE <span class="hint">- key: value pairs</span></label>
+          <div class="list-editor">
+            <div class="list-items" id="infraItems"></div>
+            <button class="add-btn" onclick="addKVItem('infraItems')">+ Add field</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>DEMOGRAPHICS <span class="hint">- key: value pairs</span></label>
+          <div class="list-editor">
+            <div class="list-items" id="demoItems"></div>
+            <button class="add-btn" onclick="addKVItem('demoItems')">+ Add field</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>ECONOMY <span class="hint">- key: value pairs</span></label>
+          <div class="list-editor">
+            <div class="list-items" id="econItems"></div>
+            <button class="add-btn" onclick="addKVItem('econItems')">+ Add field</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>VISUAL <span class="hint">- key: value pairs</span></label>
+          <div class="list-editor">
+            <div class="list-items" id="visualItems"></div>
+            <button class="add-btn" onclick="addKVItem('visualItems')">+ Add field</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>VERTICAL_PROFILE <span class="hint">- key: value pairs</span></label>
+          <div class="list-editor">
+            <div class="list-items" id="vertItems"></div>
+            <button class="add-btn" onclick="addKVItem('vertItems')">+ Add field</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="resize-handle" id="resizeHandle"></div>
+
+  <!-- ── Output panel ──────────────────────────────── -->
+  <div class="right-panel" id="rightPanel">
+    <div class="panel-header">
+      <h3>GEON Output</h3>
+      <button class="btn btn-sm btn-secondary" onclick="copyOutput()">Copy</button>
+      <button class="btn btn-sm btn-secondary" onclick="downloadGeon()">Download .geon</button>
+    </div>
+
+    <div class="output-area" id="outputArea">
+      <div class="empty-state" id="emptyState">
+        <div class="icon">&#x1F3D7;</div>
+        <p>Fill in the form fields on the left to build a GEON place description.</p>
+      </div>
+      <pre id="outputPre" style="display:none"></pre>
+    </div>
+
+    <div class="validation-bar" id="validationBar">
+      <span id="validBadge"><span class="badge badge-err">Incomplete</span></span>
+      <span id="warnBadge"></span>
+      <span id="fieldsBadge">0 fields</span>
+    </div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <span id="statusInfo">Fill in the required fields to begin</span>
+  <span class="sep">|</span>
+  <span>GEON v0.1.0</span>
+  <span class="sep">|</span>
+  <span>James Williams &mdash; University of Nottingham</span>
+</div>
+
+<script>
+// ── Theme ────────────────────────────────────────────────────────────────
+
+let currentTheme = localStorage.getItem('geon-theme') || 'dark';
+
+function applyTheme(theme) {
+  currentTheme = theme;
+  document.documentElement.classList.toggle('light', theme === 'light');
+  document.getElementById('themeBtn').innerHTML = theme === 'dark' ? '&#9790;' : '&#9788;';
+  localStorage.setItem('geon-theme', theme);
+}
+
+function toggleTheme() {
+  applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+}
+
+applyTheme(currentTheme);
+
+// ── Section toggle ───────────────────────────────────────────────────────
+
+function toggleSection(id) {
+  document.getElementById(id).classList.toggle('collapsed');
+}
+
+// ── Purpose categories and chips ─────────────────────────────────────────
+
+const PURPOSE_CATEGORIES = {
+  'Economic': ['commerce', 'retail', 'services', 'production', 'agriculture'],
+  'Civic': ['governance', 'community', 'education', 'health', 'emergency'],
+  'Social': ['gathering', 'celebration', 'protest', 'exchange', 'encounter'],
+  'Cultural': ['arts', 'heritage', 'performance', 'exhibition', 'worship'],
+  'Recreational': ['play', 'sport', 'leisure', 'contemplation', 'exercise'],
+  'Residential': ['dwelling', 'sleeping', 'domesticity'],
+  'Circulation': ['movement', 'waiting', 'transition', 'parking'],
+  'Ecological': ['habitat', 'biodiversity', 'environmental services'],
+};
+
+const selectedPurposes = new Set();
+const customPurposes = [];
+
+function buildPurposeChips() {
+  const container = document.getElementById('purposeChips');
+  container.innerHTML = '';
+  for (const [category, purposes] of Object.entries(PURPOSE_CATEGORIES)) {
+    const label = document.createElement('div');
+    label.className = 'chip-group-label';
+    label.textContent = category;
+    container.appendChild(label);
+    for (const p of purposes) {
+      const chip = document.createElement('span');
+      chip.className = 'chip' + (selectedPurposes.has(p) ? ' selected' : '');
+      chip.textContent = p;
+      chip.onclick = () => {
+        if (selectedPurposes.has(p)) selectedPurposes.delete(p);
+        else selectedPurposes.add(p);
+        chip.classList.toggle('selected');
+        rebuild();
+      };
+      container.appendChild(chip);
+    }
+  }
+  // Render custom purposes
+  for (const p of customPurposes) {
+    if (!container.querySelector(`[data-custom="${p}"]`)) {
+      const chip = document.createElement('span');
+      chip.className = 'chip selected';
+      chip.textContent = p;
+      chip.dataset.custom = p;
+      chip.onclick = () => {
+        selectedPurposes.delete(p);
+        const idx = customPurposes.indexOf(p);
+        if (idx >= 0) customPurposes.splice(idx, 1);
+        chip.remove();
+        rebuild();
+      };
+      container.appendChild(chip);
+    }
+  }
+}
+
+function addCustomPurpose() {
+  const input = document.getElementById('customPurpose');
+  const val = input.value.trim();
+  if (!val || selectedPurposes.has(val)) return;
+  selectedPurposes.add(val);
+  customPurposes.push(val);
+  input.value = '';
+  buildPurposeChips();
+  rebuild();
+}
+
+document.getElementById('customPurpose').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); addCustomPurpose(); }
+});
+
+// ── Experience scales ────────────────────────────────────────────────────
+
+const EXPERIENCE_SCALES = {
+  'openness': ['', 'very_low', 'low', 'medium', 'high', 'very_high'],
+  'enclosure': ['', 'very_low', 'low', 'medium', 'high', 'very_high'],
+  'permeability': ['', 'very_low', 'low', 'medium', 'high', 'very_high'],
+  'legibility': ['', 'very_low', 'low', 'medium', 'high', 'very_high'],
+  'noise_level': ['', 'very_quiet', 'quiet', 'moderate', 'loud', 'very_loud'],
+  'visual_complexity': ['', 'very_simple', 'simple', 'moderate', 'complex', 'very_complex'],
+  'air_quality': ['', 'very_poor', 'poor', 'moderate', 'good', 'very_good'],
+  'activity_density': ['', 'deserted', 'sparse', 'moderate', 'busy', 'crowded'],
+  'social_diversity': ['', 'very_low', 'low', 'medium', 'high', 'very_high'],
+  'sense_of_safety': ['', 'very_unsafe', 'unsafe', 'neutral', 'safe', 'very_safe'],
+  'territoriality': ['', 'very_private', 'semi_private', 'semi_public', 'public', 'very_public'],
+  'pace': ['', 'very_slow', 'slow', 'moderate', 'fast', 'very_fast'],
+  'temporal_stability': ['', 'very_transient', 'transient', 'stable', 'permanent', 'very_permanent'],
+};
+
+function buildExpGrid() {
+  const grid = document.getElementById('expGrid');
+  grid.innerHTML = '';
+  for (const [key, values] of Object.entries(EXPERIENCE_SCALES)) {
+    const field = document.createElement('div');
+    field.className = 'field';
+    const label = document.createElement('label');
+    label.textContent = key.replace(/_/g, ' ');
+    field.appendChild(label);
+    const select = document.createElement('select');
+    select.id = 'exp_' + key;
+    select.onchange = rebuild;
+    for (const v of values) {
+      const opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = v || '-- none --';
+      select.appendChild(opt);
+    }
+    field.appendChild(select);
+    grid.appendChild(field);
+  }
+}
+
+// ── KV list editors ──────────────────────────────────────────────────────
+
+function addKVItem(containerId, keyVal, valVal) {
+  const container = document.getElementById(containerId);
+  const row = document.createElement('div');
+  row.className = 'kv-item list-item';
+  const keyInput = document.createElement('input');
+  keyInput.type = 'text';
+  keyInput.placeholder = 'key';
+  keyInput.value = keyVal || '';
+  keyInput.oninput = rebuild;
+  const valInput = document.createElement('input');
+  valInput.type = 'text';
+  valInput.placeholder = 'value';
+  valInput.value = valVal || '';
+  valInput.oninput = rebuild;
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'remove-btn';
+  removeBtn.innerHTML = '&times;';
+  removeBtn.onclick = () => { row.remove(); rebuild(); };
+  row.appendChild(keyInput);
+  row.appendChild(valInput);
+  row.appendChild(removeBtn);
+  container.appendChild(row);
+  rebuild();
+}
+
+function getKVItems(containerId) {
+  const result = {};
+  const rows = document.getElementById(containerId).querySelectorAll('.kv-item');
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const k = inputs[0].value.trim();
+    const v = inputs[1].value.trim();
+    if (k && v) result[k] = v;
+  });
+  return result;
+}
+
+// ── GEON builder ─────────────────────────────────────────────────────────
+
+let currentGeon = '';
+
+function rebuild() {
+  let out = '';
+  let fieldCount = 0;
+
+  // Identity
+  const place = document.getElementById('fPlace').value.trim();
+  const type = document.getElementById('fType').value;
+  const id = document.getElementById('fId').value.trim();
+
+  if (place) { out += `PLACE: ${place}\n`; fieldCount++; }
+  if (type) { out += `TYPE: ${type}\n`; fieldCount++; }
+  if (id) { out += `ID: ${id}\n`; fieldCount++; }
+
+  // Location
+  const lat = document.getElementById('fLat').value;
+  const lon = document.getElementById('fLon').value;
+  if (lat && lon) {
+    out += `LOCATION: ${parseFloat(lat).toFixed(5)}, ${parseFloat(lon).toFixed(5)}\n`;
+    fieldCount++;
+  }
+
+  // Boundary
+  const boundary = document.getElementById('fBoundary').value.trim();
+  if (boundary) {
+    const coords = boundary.split('\n').map(l => l.trim()).filter(l => l);
+    if (coords.length > 0) {
+      out += 'BOUNDARY:\n';
+      coords.forEach(c => { out += `  - ${c}\n`; });
+      fieldCount++;
+    }
+  }
+
+  // Extent
+  const extN = document.getElementById('fExtN').value;
+  const extS = document.getElementById('fExtS').value;
+  const extE = document.getElementById('fExtE').value;
+  const extW = document.getElementById('fExtW').value;
+  if (extN && extS && extE && extW) {
+    out += `EXTENT: ${extN}, ${extS}, ${extE}, ${extW}\n`;
+    fieldCount++;
+  }
+
+  // Area & Elevation
+  const area = document.getElementById('fArea').value.trim();
+  if (area) { out += `AREA: ${area}\n`; fieldCount++; }
+  const elev = document.getElementById('fElevation').value.trim();
+  if (elev) { out += `ELEVATION: ${elev}\n`; fieldCount++; }
+
+  // Purpose
+  if (selectedPurposes.size > 0) {
+    out += 'PURPOSE:\n';
+    selectedPurposes.forEach(p => { out += `  - ${p}\n`; });
+    fieldCount++;
+  }
+
+  // Experience
+  const exp = {};
+  for (const key of Object.keys(EXPERIENCE_SCALES)) {
+    const val = document.getElementById('exp_' + key).value;
+    if (val) exp[key] = val;
+  }
+  if (Object.keys(exp).length > 0) {
+    out += 'EXPERIENCE:\n';
+    for (const [k, v] of Object.entries(exp)) out += `  ${k}: ${v}\n`;
+    fieldCount++;
+  }
+
+  // Character
+  const character = document.getElementById('fCharacter').value.trim();
+  if (character) {
+    out += 'CHARACTER:\n';
+    character.split('\n').map(l => l.trim()).filter(l => l).forEach(c => { out += `  - ${c}\n`; });
+    fieldCount++;
+  }
+
+  // Adjacencies
+  const adj = document.getElementById('fAdjacencies').value.trim();
+  if (adj) {
+    out += 'ADJACENCIES:\n';
+    adj.split('\n').map(l => l.trim()).filter(l => l).forEach(a => { out += `  - ${a}\n`; });
+    fieldCount++;
+  }
+
+  // Connectivity
+  const conn = getKVItems('connItems');
+  if (Object.keys(conn).length > 0) {
+    out += 'CONNECTIVITY:\n';
+    for (const [k, v] of Object.entries(conn)) out += `  ${k}: ${v}\n`;
+    fieldCount++;
+  }
+
+  // Contains
+  const contains = document.getElementById('fContains').value.trim();
+  if (contains) {
+    out += 'CONTAINS:\n';
+    contains.split('\n').map(l => l.trim()).filter(l => l).forEach(c => { out += `  - ${c}\n`; });
+    fieldCount++;
+  }
+
+  // Part Of
+  const partOf = document.getElementById('fPartOf').value.trim();
+  if (partOf) { out += `PART_OF: ${partOf}\n`; fieldCount++; }
+
+  // Viewsheds
+  const viewsheds = document.getElementById('fViewsheds').value.trim();
+  if (viewsheds) {
+    out += 'VIEWSHEDS:\n';
+    viewsheds.split('\n').map(l => l.trim()).filter(l => l).forEach(v => { out += `  - ${v}\n`; });
+    fieldCount++;
+  }
+
+  // Temporal
+  const temporal = getKVItems('tempItems');
+  if (Object.keys(temporal).length > 0) {
+    out += 'TEMPORAL:\n';
+    for (const [k, v] of Object.entries(temporal)) out += `  ${k}: ${v}\n`;
+    fieldCount++;
+  }
+
+  // Lifespan
+  const lifespan = getKVItems('lifespanItems');
+  if (Object.keys(lifespan).length > 0) {
+    out += 'LIFESPAN:\n';
+    for (const [k, v] of Object.entries(lifespan)) out += `  ${k}: ${v}\n`;
+    fieldCount++;
+  }
+
+  // Source
+  const source = document.getElementById('fSource').value.trim();
+  if (source) {
+    out += 'SOURCE:\n';
+    source.split('\n').map(l => l.trim()).filter(l => l).forEach(s => { out += `  - ${s}\n`; });
+    fieldCount++;
+  }
+
+  // Confidence
+  const conf = getKVItems('confItems');
+  if (Object.keys(conf).length > 0) {
+    out += 'CONFIDENCE:\n';
+    for (const [k, v] of Object.entries(conf)) out += `  ${k}: ${v}\n`;
+    fieldCount++;
+  }
+
+  // Updated
+  const updated = document.getElementById('fUpdated').value;
+  if (updated) { out += `UPDATED: ${updated}\n`; fieldCount++; }
+
+  // Extended fields
+  const extendedSections = [
+    ['BUILT_FORM', 'builtFormItems'],
+    ['ECOLOGY', 'ecologyItems'],
+    ['INFRASTRUCTURE', 'infraItems'],
+    ['DEMOGRAPHICS', 'demoItems'],
+    ['ECONOMY', 'econItems'],
+    ['VISUAL', 'visualItems'],
+    ['VERTICAL_PROFILE', 'vertItems'],
+  ];
+
+  for (const [sectionName, containerId] of extendedSections) {
+    const kv = getKVItems(containerId);
+    if (Object.keys(kv).length > 0) {
+      out += `${sectionName}:\n`;
+      for (const [k, v] of Object.entries(kv)) out += `  ${k}: ${v}\n`;
+      fieldCount++;
+    }
+  }
+
+  currentGeon = out;
+
+  // Update display
+  if (out) {
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('outputPre').style.display = 'block';
+    document.getElementById('outputPre').innerHTML = highlightGeon(out);
+  } else {
+    document.getElementById('emptyState').style.display = '';
+    document.getElementById('outputPre').style.display = 'none';
+  }
+
+  // Validation
+  const hasPlace = !!place;
+  const hasType = !!type;
+  const hasLocation = !!(lat && lon);
+  const isValid = hasPlace && hasType && hasLocation;
+
+  const missing = [];
+  if (!hasPlace) missing.push('PLACE');
+  if (!hasType) missing.push('TYPE');
+  if (!hasLocation) missing.push('LOCATION');
+
+  const recommended = [];
+  if (selectedPurposes.size === 0) recommended.push('PURPOSE');
+  if (Object.keys(exp).length === 0) recommended.push('EXPERIENCE');
+  if (!source) recommended.push('SOURCE');
+
+  document.getElementById('validBadge').innerHTML = isValid
+    ? '<span class="badge badge-ok">Valid</span>'
+    : `<span class="badge badge-err">Missing: ${missing.join(', ')}</span>`;
+  document.getElementById('warnBadge').innerHTML = recommended.length > 0
+    ? `<span class="badge badge-warn">${recommended.length} recommended missing</span>`
+    : '<span class="badge badge-ok">All recommended</span>';
+  document.getElementById('fieldsBadge').textContent = `${fieldCount} fields`;
+
+  const statusParts = [];
+  if (out) statusParts.push(`${out.split('\n').filter(l => l.trim()).length} lines`);
+  statusParts.push(`${out.length} chars`);
+  statusParts.push(`~${Math.max(1, Math.round(out.length / 4))} tokens`);
+  document.getElementById('statusInfo').textContent = out ? statusParts.join(' | ') : 'Fill in the required fields to begin';
+}
+
+// ── Syntax highlighting ──────────────────────────────────────────────────
+
+function highlightGeon(text) {
+  return text.split('\n').map(line => {
+    if (line.match(/^\s*-\s+(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/))
+      return `<span class="geon-list">  - </span><span class="geon-coord">${escHtml(line.replace(/^\s*-\s+/, ''))}</span>`;
+    if (line.match(/^\s*-\s+/))
+      return `<span class="geon-list">${escHtml(line)}</span>`;
+    const m = line.match(/^(\s*)([\w_]+):\s*(.*)$/);
+    if (m) {
+      const [, indent, key, value] = m;
+      const sections = ['PURPOSE','EXPERIENCE','CHARACTER','ADJACENCIES','CONNECTIVITY','CONTAINS','TEMPORAL','SOURCE','CONFIDENCE','BOUNDARY','VIEWSHEDS','BUILT_FORM','ECOLOGY','INFRASTRUCTURE','DEMOGRAPHICS','ECONOMY','LIFESPAN','VISUAL','VERTICAL_PROFILE'];
+      if (!value && sections.includes(key)) return `${indent}<span class="geon-section">${escHtml(key)}:</span>`;
+      const isCoord = value.match(/^-?\d+\.?\d*,\s*-?\d+\.?\d*$/);
+      return `${indent}<span class="geon-key">${escHtml(key)}:</span> <span class="${isCoord ? 'geon-coord' : 'geon-value'}">${escHtml(value)}</span>`;
+    }
+    return escHtml(line);
+  }).join('\n');
+}
+
+// ── Actions ──────────────────────────────────────────────────────────────
+
+function copyOutput() {
+  if (!currentGeon) return;
+  navigator.clipboard.writeText(currentGeon).then(() => {
+    document.getElementById('statusInfo').textContent = 'Copied to clipboard';
+    setTimeout(rebuild, 1500);
+  });
+}
+
+function downloadGeon() {
+  if (!currentGeon) return;
+  const name = document.getElementById('fPlace').value.trim().replace(/\s+/g, '_').toLowerCase() || 'place';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([currentGeon], { type: 'text/plain' }));
+  a.download = `${name}.geon`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function escHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+// ── Resize handle ────────────────────────────────────────────────────────
+
+let isResizing = false;
+document.getElementById('resizeHandle').addEventListener('mousedown', (e) => {
+  isResizing = true;
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+  e.preventDefault();
+});
+document.addEventListener('mousemove', (e) => {
+  if (!isResizing) return;
+  document.getElementById('rightPanel').style.width = Math.max(280, Math.min(800, window.innerWidth - e.clientX)) + 'px';
+});
+document.addEventListener('mouseup', () => {
+  isResizing = false;
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+});
+
+// ── Init ─────────────────────────────────────────────────────────────────
+
+buildPurposeChips();
+buildExpGrid();
+rebuild();
+</script>
+</body>
+</html>

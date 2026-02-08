@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GEON — Geospatial Experience-Oriented Notation</title>
+<style>
+  /* ── Theme variables (shared) ───────────────────────── */
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #242836;
+    --border: #2e3344;
+    --text: #e1e4ed;
+    --text-dim: #8b8fa3;
+    --accent: #6c8cff;
+    --accent-dim: #4a6ae0;
+    --green: #4ade80;
+    --orange: #fb923c;
+    --red: #f87171;
+    --purple: #c084fc;
+    --shadow: rgba(0,0,0,0.4);
+    --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --syn-key: #6c8cff;
+    --syn-value: #e1e4ed;
+    --syn-list: #4ade80;
+    --syn-coord: #fb923c;
+    --syn-comment: #8b8fa3;
+    --syn-section: #c084fc;
+  }
+
+  :root.light {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface2: #ebedf2;
+    --border: #d1d5e0;
+    --text: #1a1d27;
+    --text-dim: #5c6070;
+    --accent: #4a6ae0;
+    --accent-dim: #3a58c4;
+    --green: #16a34a;
+    --orange: #d97706;
+    --red: #dc2626;
+    --purple: #7c3aed;
+    --shadow: rgba(0,0,0,0.1);
+    --syn-key: #2f54c9;
+    --syn-value: #1a1d27;
+    --syn-list: #16713a;
+    --syn-coord: #b45309;
+    --syn-comment: #6b7085;
+    --syn-section: #7c3aed;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: background 0.25s, color 0.25s;
+  }
+
+  /* ── Header ──────────────────────────────────────────── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  header .logo {
+    height: 44px;
+    width: auto;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 6px 18px var(--shadow);
+  }
+
+  header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+  header h1 span { color: var(--accent); }
+  header .subtitle { color: var(--text-dim); font-size: 13px; flex: 1; }
+
+  .nav-links { display: flex; gap: 4px; }
+
+  .nav-link {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    font-family: var(--font-sans);
+  }
+
+  .nav-link:hover { color: var(--text); border-color: var(--accent); }
+  .nav-link.active { color: var(--accent); border-color: var(--accent); background: var(--bg); }
+
+  .theme-toggle {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    width: 34px; height: 34px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+
+  .theme-toggle:hover { color: var(--text); border-color: var(--accent); }
+
+  /* ── Scrollable content ──────────────────────────────── */
+  .scroll-wrap {
+    flex: 1;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+
+  .scroll-wrap::-webkit-scrollbar { width: 8px; }
+  .scroll-wrap::-webkit-scrollbar-track { background: transparent; }
+  .scroll-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .scroll-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  .content { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── Hero ─────────────────────────────────────────────── */
+  .hero {
+    text-align: center;
+    padding: 60px 20px 48px;
+  }
+
+  .hero-logo {
+    width: 120px;
+    height: 120px;
+    border-radius: 24px;
+    box-shadow: 0 12px 40px var(--shadow);
+    margin-bottom: 28px;
+  }
+
+  .hero h2 {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+
+  .hero h2 .highlight { color: var(--accent); }
+
+  .hero .tagline {
+    font-size: 18px;
+    color: var(--text-dim);
+    max-width: 600px;
+    margin: 0 auto 32px;
+    line-height: 1.6;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    border: none;
+    font-family: var(--font-sans);
+  }
+
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-dim); }
+
+  .btn-secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn .icon { font-size: 18px; }
+
+  /* ── Section layout ──────────────────────────────────── */
+  .section {
+    padding: 48px 0;
+  }
+
+  .section + .section {
+    border-top: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .section h3 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+
+  .section .desc {
+    font-size: 15px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    max-width: 640px;
+    margin-bottom: 28px;
+  }
+
+  /* ── Live sample ─────────────────────────────────────── */
+  .live-demo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  @media (max-width: 768px) {
+    .live-demo { grid-template-columns: 1fr; }
+    .hero h2 { font-size: 28px; }
+  }
+
+  .code-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .code-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .code-panel-header .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .code-panel-header .format-label {
+    flex: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .code-panel-header .token-badge {
+    font-weight: 500;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .code-panel pre {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.65;
+    padding: 16px;
+    margin: 0;
+    overflow-x: auto;
+    flex: 1;
+  }
+
+  /* ── Comparison table ────────────────────────────────── */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  .compare-table th {
+    text-align: left;
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    border-bottom: 2px solid var(--border);
+  }
+
+  .compare-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .compare-table tr:last-child td { border-bottom: none; }
+
+  .compare-table .dim { color: var(--text-dim); }
+  .compare-table .good { color: var(--green); font-weight: 600; }
+  .compare-table .meh { color: var(--orange); }
+  .compare-table .bad { color: var(--red); }
+
+  /* ── Feature cards ───────────────────────────────────── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    margin-top: 4px;
+  }
+
+  .feature-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    transition: border-color 0.2s;
+  }
+
+  .feature-card:hover { border-color: var(--accent); }
+
+  .feature-card .card-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .feature-card h4 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .feature-card p {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* ── Stats row ───────────────────────────────────────── */
+  .stats-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+  }
+
+  .stat-card {
+    flex: 1;
+    min-width: 140px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    text-align: center;
+  }
+
+  .stat-card .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+    line-height: 1.2;
+  }
+
+  .stat-card .stat-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* ── Install block ───────────────────────────────────── */
+  .install-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .install-block pre {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 20px;
+    margin: 0;
+    overflow-x: auto;
+  }
+
+  .install-block .comment { color: var(--syn-comment); }
+  .install-block .cmd { color: var(--green); }
+
+  /* ── Tool cards ──────────────────────────────────────── */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  @media (max-width: 640px) { .tool-grid { grid-template-columns: 1fr; } }
+
+  .tool-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.2s;
+    display: block;
+  }
+
+  .tool-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px var(--shadow);
+  }
+
+  .tool-card .tool-icon { font-size: 32px; margin-bottom: 12px; display: block; }
+  .tool-card h4 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .tool-card p { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+
+  /* ── Field reference ─────────────────────────────────── */
+  .field-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 640px) { .field-columns { grid-template-columns: 1fr; } }
+
+  .field-col h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .field-col ul {
+    list-style: none;
+    font-size: 13px;
+    line-height: 2;
+  }
+
+  .field-col li code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--syn-key);
+    background: var(--surface2);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  .field-col li .req {
+    font-size: 10px;
+    color: var(--red);
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-left: 4px;
+  }
+
+  .field-col li .opt {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-left: 4px;
+  }
+
+  /* ── Footer ──────────────────────────────────────────── */
+  .page-footer {
+    padding: 32px 0 48px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .page-footer strong { color: var(--text); }
+  .page-footer a { color: var(--accent); text-decoration: none; }
+  .page-footer a:hover { text-decoration: underline; }
+
+  /* ── Status bar ──────────────────────────────────────── */
+  .status-bar {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 6px 16px;
+    font-size: 11px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .status-bar .sep { color: var(--border); }
+
+  /* ── Syntax classes ──────────────────────────────────── */
+  .geon-key { color: var(--syn-key); font-weight: 600; }
+  .geon-value { color: var(--syn-value); }
+  .geon-list { color: var(--syn-list); }
+  .geon-coord { color: var(--syn-coord); }
+  .geon-section { color: var(--syn-section); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header>
+  <img class="logo" src="../assets/logo.png" alt="GEON logo">
+  <h1><span>GEON</span></h1>
+  <span class="subtitle">Geospatial Experience-Oriented Notation</span>
+  <nav class="nav-links">
+    <a class="nav-link active" href="index.html">About</a>
+    <a class="nav-link" href="explore.html">Map</a>
+    <a class="nav-link" href="form.html">Build</a>
+  </nav>
+  <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark theme">&#9790;</button>
+</header>
+
+<div class="scroll-wrap">
+<div class="content">
+
+  <!-- ── Hero ────────────────────────────────────────── -->
+  <div class="hero">
+    <img class="hero-logo" src="../assets/logo.png" alt="GEON" onerror="this.style.display='none'">
+    <h2>A <span class="highlight">human &amp; LLM-readable</span> format<br>for spatial intelligence</h2>
+    <p class="tagline">GEON bridges the gap between machine-optimized geospatial data and rich, semantic descriptions of place &mdash; making spatial reasoning accessible to both people and AI.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="explore.html"><span class="icon">&#x1F5FA;</span> Explore Map</a>
+      <a class="btn btn-secondary" href="form.html"><span class="icon">&#x1F3D7;</span> Build a Place</a>
+      <a class="btn btn-secondary" href="../spec.md"><span class="icon">&#x1F4C4;</span> Read the Spec</a>
+    </div>
+  </div>
+
+  <!-- ── Token stats ─────────────────────────────────── -->
+  <div class="section">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value">~24%</div>
+        <div class="stat-label">fewer tokens than GeoJSON</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">8.8</div>
+        <div class="stat-label">facts per 100 tokens</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">1.2x</div>
+        <div class="stat-label">more places per context window</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">10+</div>
+        <div class="stat-label">semantic field categories</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Live sample ─────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Live Example</div>
+    <h3>See it in action</h3>
+    <p class="desc">The same place described in GEON and GeoJSON. GEON embeds meaning, experience, and relationships directly &mdash; not just coordinates in a properties bag.</p>
+
+    <div class="live-demo">
+      <div class="code-panel">
+        <div class="code-panel-header">
+          <span class="dot" style="background:var(--accent)"></span>
+          <span class="format-label">GEON</span>
+          <span class="token-badge" id="geonTokens" style="background:rgba(74,222,128,0.15);color:var(--green)"></span>
+        </div>
+        <pre id="geonSample"></pre>
+      </div>
+      <div class="code-panel">
+        <div class="code-panel-header">
+          <span class="dot" style="background:var(--orange)"></span>
+          <span class="format-label">GeoJSON</span>
+          <span class="token-badge" id="geojsonTokens" style="background:rgba(251,146,60,0.15);color:var(--orange)"></span>
+        </div>
+        <pre id="geojsonSample" style="color:var(--text-dim); font-size:12px;"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Why GEON ────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Comparison</div>
+    <h3>Why GEON?</h3>
+    <p class="desc">Traditional geospatial formats are built for machines. GEON is built for understanding.</p>
+
+    <table class="compare-table">
+      <thead>
+        <tr><th></th><th>GeoJSON</th><th>WKT</th><th>GEON</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Readability</strong></td>
+          <td class="dim">Machine-first</td>
+          <td class="dim">Machine-first</td>
+          <td class="good">Human &amp; LLM-first</td>
+        </tr>
+        <tr>
+          <td><strong>Semantics</strong></td>
+          <td class="dim">Flat properties bag</td>
+          <td class="bad">None</td>
+          <td class="good">Structured fields</td>
+        </tr>
+        <tr>
+          <td><strong>Experience</strong></td>
+          <td class="bad">Absent</td>
+          <td class="bad">Absent</td>
+          <td class="good">Core feature</td>
+        </tr>
+        <tr>
+          <td><strong>Relationships</strong></td>
+          <td class="meh">Requires computation</td>
+          <td class="bad">Absent</td>
+          <td class="good">Explicit</td>
+        </tr>
+        <tr>
+          <td><strong>Temporal</strong></td>
+          <td class="dim">Limited</td>
+          <td class="bad">None</td>
+          <td class="good">Integrated</td>
+        </tr>
+        <tr>
+          <td><strong>Token efficiency</strong></td>
+          <td class="meh">~24% more</td>
+          <td class="dim">Geometry only</td>
+          <td class="good">Baseline</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Features ────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Format Features</div>
+    <h3>What GEON captures</h3>
+    <p class="desc">Every aspect of a place &mdash; from its physical form to how it feels to be there.</p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="card-icon">&#x1F4CD;</span>
+        <h4>Identity &amp; Geometry</h4>
+        <p>Name, type, coordinates, boundary polygons, elevation, area &mdash; the spatial foundation.</p>
+      </div>
+      <div class="feature-card">
+        <span class="card-icon">&#x1F3AF;</span>
+        <h4>Purpose &amp; Function</h4>
+        <p>What a place is <em>for</em>: commerce, gathering, worship, recreation &mdash; structured by category.</p>
+      </div>
+      <div class="feature-card">
+        <span class="card-icon">&#x2728;</span>
+        <h4>Experiential Qualities</h4>
+        <p>Openness, noise, safety, pace, enclosure &mdash; 13 scales that describe how a place <em>feels</em>.</p>
+      </div>
+      <div class="feature-card">
+        <span class="card-icon">&#x1F517;</span>
+        <h4>Spatial Relationships</h4>
+        <p>Adjacencies, connectivity, containment, viewsheds &mdash; how places relate to each other.</p>
+      </div>
+      <div class="feature-card">
+        <span class="card-icon">&#x23F0;</span>
+        <h4>Temporal Patterns</h4>
+        <p>Footfall rhythms, opening hours, seasonal events, lifespan &mdash; places change over time.</p>
+      </div>
+      <div class="feature-card">
+        <span class="card-icon">&#x1F50D;</span>
+        <h4>Provenance &amp; Trust</h4>
+        <p>Source attribution, confidence levels, update timestamps &mdash; know where your data came from.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Field Reference ─────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Reference</div>
+    <h3>Field overview</h3>
+    <p class="desc">Three required fields, plus a rich set of optional semantic, relational, temporal, and provenance fields.</p>
+
+    <div class="field-columns">
+      <div class="field-col">
+        <h4>Core Fields</h4>
+        <ul>
+          <li><code>PLACE</code> <span class="req">required</span> &mdash; name</li>
+          <li><code>TYPE</code> <span class="req">required</span> &mdash; classification</li>
+          <li><code>LOCATION</code> <span class="req">required</span> &mdash; lat, lon</li>
+          <li><code>BOUNDARY</code> <span class="opt">optional</span> &mdash; polygon</li>
+          <li><code>EXTENT</code> <span class="opt">optional</span> &mdash; bounding box</li>
+          <li><code>AREA</code> <span class="opt">optional</span> &mdash; surface area</li>
+          <li><code>ELEVATION</code> <span class="opt">optional</span> &mdash; height</li>
+          <li><code>ID</code> <span class="opt">optional</span> &mdash; identifier</li>
+        </ul>
+        <h4 style="margin-top:16px">Semantic Fields</h4>
+        <ul>
+          <li><code>PURPOSE</code> &mdash; activity types</li>
+          <li><code>EXPERIENCE</code> &mdash; 13 quality scales</li>
+          <li><code>CHARACTER</code> &mdash; descriptive traits</li>
+        </ul>
+      </div>
+      <div class="field-col">
+        <h4>Relational Fields</h4>
+        <ul>
+          <li><code>ADJACENCIES</code> &mdash; neighbours</li>
+          <li><code>CONNECTIVITY</code> &mdash; networks</li>
+          <li><code>CONTAINS</code> &mdash; nested places</li>
+          <li><code>PART_OF</code> &mdash; parent place</li>
+          <li><code>VIEWSHEDS</code> &mdash; visible landmarks</li>
+        </ul>
+        <h4 style="margin-top:16px">Temporal &amp; Provenance</h4>
+        <ul>
+          <li><code>TEMPORAL</code> &mdash; time-varying patterns</li>
+          <li><code>LIFESPAN</code> &mdash; age and permanence</li>
+          <li><code>SOURCE</code> &mdash; data origins</li>
+          <li><code>CONFIDENCE</code> &mdash; quality indicators</li>
+          <li><code>UPDATED</code> &mdash; last modified</li>
+        </ul>
+        <h4 style="margin-top:16px">Extended Domain</h4>
+        <ul>
+          <li><code>BUILT_FORM</code> <code>ECOLOGY</code> <code>INFRASTRUCTURE</code></li>
+          <li><code>DEMOGRAPHICS</code> <code>ECONOMY</code> <code>VISUAL</code></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tools ───────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Interactive Tools</div>
+    <h3>Try it now</h3>
+    <p class="desc">Explore GEON with two browser-based tools &mdash; no install required.</p>
+
+    <div class="tool-grid">
+      <a class="tool-card" href="explore.html">
+        <span class="tool-icon">&#x1F5FA;</span>
+        <h4>Map Explorer</h4>
+        <p>Click the map to fetch OSM features, search by name, or paste GeoJSON. See instant GEON output with syntax highlighting, validation, and token comparison.</p>
+      </a>
+      <a class="tool-card" href="form.html">
+        <span class="tool-icon">&#x1F3D7;</span>
+        <h4>Place Builder</h4>
+        <p>Fill out every GEON field with a structured form. Purpose chips, experience dropdowns, dynamic key-value editors &mdash; live GEON output as you type.</p>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Install ─────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Python Library</div>
+    <h3>Get started</h3>
+    <p class="desc">A full Python library for parsing, generating, validating, and converting GEON.</p>
+
+    <div class="install-block">
+      <pre><span class="comment"># Install from source</span>
+<span class="cmd">pip install -e .</span>
+
+<span class="comment"># With all optional dependencies (OSM, token counting)</span>
+<span class="cmd">pip install -e ".[all]"</span>
+
+<span class="comment"># Quick usage</span>
+<span class="cmd">import geon</span>
+
+place = geon.parse("""
+PLACE: Victoria Park
+TYPE: public_space
+LOCATION: 52.9403, -1.1340
+PURPOSE:
+  - recreation
+  - ecology
+""")
+
+print(place.place)      <span class="comment"># "Victoria Park"</span>
+print(place.purpose)    <span class="comment"># ["recreation", "ecology"]</span>
+
+text = geon.generate(place)
+result = geon.validate(place)
+geojson = geon.to_geojson(place)</pre>
+    </div>
+  </div>
+
+  <!-- ── Footer ──────────────────────────────────────── -->
+  <div class="page-footer">
+    <p><strong>GEON</strong> &mdash; Geospatial Experience-Oriented Notation &mdash; v0.1.0</p>
+    <p>Developed by <strong>James Williams</strong> at the <strong>University of Nottingham</strong></p>
+    <p>Specification licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></p>
+  </div>
+
+</div>
+</div>
+
+<div class="status-bar">
+  <span>GEON v0.1.0</span>
+  <span class="sep">|</span>
+  <span>James Williams &mdash; University of Nottingham</span>
+</div>
+
+<script>
+// ── Theme ────────────────────────────────────────────────────────────────
+
+let currentTheme = localStorage.getItem('geon-theme') || 'dark';
+
+function applyTheme(theme) {
+  currentTheme = theme;
+  document.documentElement.classList.toggle('light', theme === 'light');
+  document.getElementById('themeBtn').innerHTML = theme === 'dark' ? '&#9790;' : '&#9788;';
+  localStorage.setItem('geon-theme', theme);
+}
+
+function toggleTheme() {
+  applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+}
+
+applyTheme(currentTheme);
+
+// ── Live sample data ─────────────────────────────────────────────────────
+
+const GEON_SAMPLE = `PLACE: Nottingham Market Square
+TYPE: public_space
+LOCATION: 52.95480, -1.15810
+BOUNDARY:
+  - 52.95530, -1.15920
+  - 52.95530, -1.15700
+  - 52.95430, -1.15700
+  - 52.95430, -1.15920
+  - 52.95530, -1.15920
+AREA: 22000 sqm
+PURPOSE:
+  - civic gathering
+  - events and festivals
+  - informal commerce
+  - circulation
+EXPERIENCE:
+  openness: high
+  enclosure: medium
+  accessibility: high
+  activity_density: variable
+CHARACTER:
+  - one of the largest public squares in England
+  - Georgian and Victorian surrounding architecture
+  - civic focal point since medieval era
+ADJACENCIES:
+  - Old Market Square tram stop (50m north)
+  - Council House (immediate west)
+  - Exchange Arcade (southeast corner)
+CONNECTIVITY:
+  pedestrian_entries: 6
+  vehicular_access: restricted
+  public_transport: tram (adjacent)
+TEMPORAL:
+  weekday_footfall: 2000-3000 people/hour
+  weekend_events: 2-3 per month
+  evening_activity: low (20% of daytime)
+SOURCE:
+  - field survey (2025-01)
+  - OpenStreetMap
+UPDATED: 2025-01-15`;
+
+const GEOJSON_SAMPLE = {
+  "type": "Feature",
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [[
+      [-1.15920, 52.95530],
+      [-1.15700, 52.95530],
+      [-1.15700, 52.95430],
+      [-1.15920, 52.95430],
+      [-1.15920, 52.95530]
+    ]]
+  },
+  "properties": {
+    "name": "Nottingham Market Square",
+    "type": "public_space",
+    "area": "22000 sqm",
+    "purpose": [
+      "civic gathering",
+      "events and festivals",
+      "informal commerce",
+      "circulation"
+    ],
+    "experience_openness": "high",
+    "experience_enclosure": "medium",
+    "experience_accessibility": "high",
+    "experience_activity_density": "variable",
+    "character": [
+      "one of the largest public squares in England",
+      "Georgian and Victorian surrounding architecture",
+      "civic focal point since medieval era"
+    ],
+    "adjacency_1": "Old Market Square tram stop (50m north)",
+    "adjacency_2": "Council House (immediate west)",
+    "adjacency_3": "Exchange Arcade (southeast corner)",
+    "connectivity_pedestrian_entries": 6,
+    "connectivity_vehicular_access": "restricted",
+    "connectivity_public_transport": "tram (adjacent)",
+    "temporal_weekday_footfall": "2000-3000 people/hour",
+    "temporal_weekend_events": "2-3 per month",
+    "temporal_evening_activity": "low (20% of daytime)",
+    "source": ["field survey (2025-01)", "OpenStreetMap"],
+    "updated": "2025-01-15"
+  }
+};
+
+// ── Render samples ───────────────────────────────────────────────────────
+
+function highlightGeon(text) {
+  return text.split('\n').map(line => {
+    if (line.match(/^\s*-\s+(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/))
+      return `<span class="geon-list">  - </span><span class="geon-coord">${esc(line.replace(/^\s*-\s+/, ''))}</span>`;
+    if (line.match(/^\s*-\s+/))
+      return `<span class="geon-list">${esc(line)}</span>`;
+    const m = line.match(/^(\s*)([\w_]+):\s*(.*)$/);
+    if (m) {
+      const [, indent, key, value] = m;
+      const sections = ['PURPOSE','EXPERIENCE','CHARACTER','ADJACENCIES','CONNECTIVITY','CONTAINS','TEMPORAL','SOURCE','CONFIDENCE','BOUNDARY','VIEWSHEDS'];
+      if (!value && sections.includes(key)) return `${indent}<span class="geon-section">${esc(key)}:</span>`;
+      const isCoord = value.match(/^-?\d+\.?\d*,\s*-?\d+\.?\d*$/);
+      return `${indent}<span class="geon-key">${esc(key)}:</span> <span class="${isCoord ? 'geon-coord' : 'geon-value'}">${esc(value)}</span>`;
+    }
+    return esc(line);
+  }).join('\n');
+}
+
+function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+function estimateTokens(text) { return Math.max(1, Math.round(text.length / 4)); }
+
+// Render
+const geojsonStr = JSON.stringify(GEOJSON_SAMPLE, null, 2);
+
+document.getElementById('geonSample').innerHTML = highlightGeon(GEON_SAMPLE);
+document.getElementById('geojsonSample').textContent = geojsonStr;
+
+const gt = estimateTokens(GEON_SAMPLE);
+const jt = estimateTokens(geojsonStr);
+const saving = ((1 - gt / jt) * 100).toFixed(0);
+
+document.getElementById('geonTokens').textContent = `~${gt} tokens`;
+document.getElementById('geojsonTokens').textContent = `~${jt} tokens (+${saving}%)`;
+</script>
+</body>
+</html>
