@@ -5,10 +5,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GEON &mdash; Geospatial Experience-Oriented Notation</title>
-  <link rel="stylesheet" type='text/css'
-    href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css" />
+  <link rel="stylesheet" type='text/css' href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+  <script src="hero-data.js"></script> <!-- Link to external data -->
   <style>
     /* ── Theme variables (shared) ───────────────────────── */
     :root {
@@ -42,6 +42,10 @@
       --surface: #ffffff;
       --surface2: #ebedf2;
       --border: #d1d5e0;
+      /* Hero overlay gradients for light mode */
+      --hero-overlay-start: rgba(245, 246, 248, 0.95);
+      --hero-overlay-end: rgba(245, 246, 248, 0.4);
+
       --text: #1a1d27;
       --text-dim: #5c6070;
       --accent: #4a6ae0;
@@ -57,6 +61,12 @@
       --syn-coord: #b45309;
       --syn-comment: #6b7085;
       --syn-section: #7c3aed;
+    }
+
+    :root {
+      /* Dark mode defaults matching existing variables */
+      --hero-overlay-start: rgba(15, 17, 23, 0.95);
+      --hero-overlay-end: rgba(15, 17, 23, 0.6);
     }
 
     * {
@@ -189,28 +199,140 @@
       max-width: 1080px;
       margin: 0 auto;
       padding: 0 24px;
+      position: relative;
+      z-index: 2;
+      /* Ensure content sits above hero map if overlaps occur */
     }
 
     /* ── Hero ─────────────────────────────────────────────── */
     .hero {
-      text-align: center;
-      padding: 60px 20px 48px;
+      position: relative;
+      height: calc(100vh - 65px);
+      min-height: 600px;
+      width: 100%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      /* Spread content */
+      padding: 0 5%;
+      /* Add side padding */
+      border-bottom: 1px solid var(--border);
+    }
+
+    #heroMap {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--surface2);
+      /* Fallback */
+    }
+
+    /* leaflet control adjustment for hero */
+    .hero .leaflet-control-attribution {
+      background: rgba(255, 255, 255, 0.7) !important;
+      border-radius: 4px;
+      padding: 0 5px;
+      font-size: 10px;
+      color: #333;
+      z-index: 1000;
+      /* Ensure on top of overlays */
+    }
+
+    :root:not(.light) .hero .leaflet-control-attribution {
+      background: rgba(15, 17, 23, 0.7) !important;
+      color: #aaa;
+    }
+
+    :root:not(.light) .hero .leaflet-control-attribution a {
+      color: #aaa;
+    }
+
+    :root:not(.light) .hero-container .leaflet-control-attribution {
+      background: rgba(15, 17, 23, 0.7) !important;
+      color: #aaa;
+    }
+
+    :root:not(.light) .hero-container .leaflet-control-attribution a {
+      color: #aaa;
+    }
+
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: radial-gradient(circle at center, var(--hero-overlay-end) 0%, var(--hero-overlay-start) 100%);
+      pointer-events: none;
+    }
+
+    .hero-text {
+      position: relative;
+      z-index: 2;
+      text-align: left;
+      /* Left align */
+      max-width: 600px;
+      /* Limit width */
+      padding: 0;
     }
 
     .hero-logo {
-      width: 120px;
-      height: 120px;
-      border-radius: 24px;
+      width: 100px;
+      height: 100px;
+      border-radius: 20px;
       box-shadow: 0 12px 40px var(--shadow);
-      margin-bottom: 28px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.1);
     }
 
     .hero h2 {
-      font-size: 36px;
-      font-weight: 700;
+      font-size: 48px;
+      font-weight: 800;
       letter-spacing: -0.03em;
-      line-height: 1.15;
-      margin-bottom: 12px;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      text-shadow: 0 4px 12px var(--bg);
+      /* Improve contrast */
+    }
+
+    @media (max-width: 900px) {
+      .hero h2 {
+        font-size: 36px;
+      }
+
+      .hero {
+        min-height: auto;
+        height: auto;
+        padding: 100px 24px 60px;
+        /* More top padding for header */
+        flex-direction: column;
+        justify-content: center;
+        gap: 40px;
+      }
+
+      .hero-text {
+        text-align: center;
+        max-width: 100%;
+        margin: 0 auto;
+      }
+
+      .hero-actions {
+        justify-content: center;
+      }
+
+      .hero-code-card {
+        position: relative;
+        right: auto;
+        top: auto;
+        transform: none;
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+        display: flex;
+        /* Show on mobile too, stacked */
+      }
     }
 
     .hero h2 .highlight {
@@ -218,58 +340,177 @@
     }
 
     .hero .tagline {
-      font-size: 18px;
-      color: var(--text-dim);
-      max-width: 600px;
-      margin: 0 auto 32px;
+      font-size: 20px;
+      color: var(--text);
+      /* Brighter for contrast */
       line-height: 1.6;
+      margin-bottom: 36px;
+      max-width: 600px;
+      margin: 0 auto 36px;
+      text-shadow: 0 2px 8px var(--bg);
+      opacity: 0.9;
     }
 
     .hero-actions {
       display: flex;
       gap: 12px;
-      justify-content: center;
       flex-wrap: wrap;
+      justify-content: flex-start;
     }
 
+    /* Restoring missing button styles */
     .btn {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 14px;
+      border-radius: 10px;
+      font-size: 15px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.2s;
       text-decoration: none;
-      border: none;
+      border: 1px solid transparent;
       font-family: var(--font-sans);
+      white-space: nowrap;
     }
 
     .btn-primary {
       background: var(--accent);
       color: #fff;
+      box-shadow: 0 4px 12px rgba(74, 106, 224, 0.3);
     }
 
     .btn-primary:hover {
       background: var(--accent-dim);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(74, 106, 224, 0.4);
     }
 
     .btn-secondary {
-      background: var(--surface2);
-      border: 1px solid var(--border);
+      background: var(--surface);
+      border-color: var(--border);
       color: var(--text);
     }
 
     .btn-secondary:hover {
       border-color: var(--accent);
       color: var(--accent);
+      background: var(--surface2);
+      transform: translateY(-2px);
     }
 
-    .btn .icon {
-      font-size: 18px;
+    /* Floating Code Card */
+    .hero-code-card {
+      position: relative;
+      /* Change to relative for flex layout if needed, or keep absolute */
+      /* Let's keep absolute but position it clearly on the right */
+      position: absolute;
+      right: 5%;
+      bottom: auto;
+      /* Unset bottom if centered vertically */
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      width: 400px;
+      /* Wider */
+      background: rgba(15, 17, 23, 0.9);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: opacity 0.3s;
     }
+
+    :root.light .hero-code-card {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    @media (max-width: 900px) {
+      .hero-code-card {
+        display: none;
+        /* Hide on smaller screens to avoid clutter */
+      }
+    }
+
+    /* Reuse hero code styles from previous */
+    .hero-code-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    :root.light .hero-code-header {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    .hero-code-header .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .hero-code-header .dot.red {
+      background: #ff5f56;
+    }
+
+    .hero-code-header .dot.yellow {
+      background: #ffbd2e;
+    }
+
+    .hero-code-header .dot.green {
+      background: #27c93f;
+    }
+
+    .hero-code-header .filename {
+      color: var(--text-dim);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      margin-left: 8px;
+    }
+
+    #heroGeon {
+      padding: 16px;
+      margin: 0;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    .typing-cursor::after {
+      content: '▋';
+      color: var(--accent);
+      animation: blink 1s step-end infinite;
+      margin-left: 2px;
+      font-size: 10px;
+      vertical-align: middle;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0;
+      }
+    }
+
+
 
     /* ── Section layout ──────────────────────────────────── */
     .section {
@@ -957,31 +1198,47 @@
       <a class="nav-link" href="explore.html">Map</a>
       <a class="nav-link" href="form.html">Build</a>
     </nav>
-    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()"
-      title="Toggle light/dark theme">&#9790;</button>
+    <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="Toggle light/dark theme">&#9790;</button>
   </header>
 
   <div class="scroll-wrap">
-    <div class="content">
 
-      <!-- ── Hero ────────────────────────────────────────── -->
-      <div class="hero">
-        <img class="hero-logo" src="logo.png" alt="GEON"
-          onerror="this.style.display='none'">
-        <h2>A <span class="highlight">human &amp; LLM-readable</span> format<br>for spatial
-          intelligence</h2>
+    <div class="hero">
+      <!-- Map Background -->
+      <div id="heroMap"></div>
+
+      <!-- Gradient Overlay -->
+      <div class="hero-overlay"></div>
+
+      <!-- Content (Code Card) -->
+      <div class="hero-code-card">
+        <div class="hero-code-header">
+          <span class="dot red"></span>
+          <span class="dot yellow"></span>
+          <span class="dot green"></span>
+          <span class="filename">stream.geon</span>
+        </div>
+        <pre id="heroGeon" class="typing-cursor"></pre>
+      </div>
+
+      <!-- Centered Text Content -->
+      <div class="hero-text">
+        <img class="hero-logo" src="logo.png" alt="GEON" onerror="this.style.display='none'">
+        <h2>A <span class="highlight">human &amp; AI-readable</span><br>format for place.</h2>
         <p class="tagline">GEON bridges the gap between machine-optimized geospatial data and rich,
           semantic descriptions of place &mdash; making spatial reasoning accessible to both people
-          and AI.</p>
+          and AI agents.</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="explore.html"><i class="ph ph-globe-hemisphere-west icon"></i> Explore
             Map</a>
           <a class="btn btn-secondary" href="form.html"><i class="ph ph-buildings icon"></i> Build a
             Place</a>
-          <a class="btn btn-secondary" href="../spec.md"><i class="ph ph-file-text icon"></i> Read
-            the Spec</a>
+          <a class="btn btn-secondary" href="../spec.md"><i class="ph ph-file-text icon"></i> Spec</a>
         </div>
       </div>
+    </div>
+
+    <div class="content">
 
       <!-- ── Token stats ─────────────────────────────────── -->
       <div class="section">
@@ -1338,6 +1595,9 @@ LOCATION: 52.9403, -1.1340
     <span>GEON v0.1.0</span>
     <span class="sep">|</span>
     <span>James Williams &mdash; University of Nottingham</span>
+    <span class="sep">|</span>
+    <span>Map data &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank"
+        style="color:inherit;text-decoration:none;">OpenStreetMap</a> contributors</span>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1706,6 +1966,131 @@ UPDATED: 2025-01-15`,
     }
 
     // ── Initialize ────────────────────────────────────────────────────────────
+
+    // ── Initialize ────────────────────────────────────────────────────────────
+
+    // ── Hero Animation ────────────────────────────────────────────────────────
+
+    // Simplified map for hero
+    const heroMap = L.map('heroMap', {
+      zoomControl: false,
+      attributionControl: true,
+      zoomSnap: 0.1,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      boxZoom: false,
+      keyboard: false,
+      touchZoom: false
+    }).setView([52.9548, -1.1581], 16); // Default start
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      className: 'hero-tiles'
+    }).addTo(heroMap);
+
+    // Hero marker
+    const heroMarker = L.circleMarker([0, 0], {
+      radius: 12, color: '#fff', fillColor: '#6c8cff', fillOpacity: 1, weight: 3
+    }).addTo(heroMap);
+
+    let heroIndex = 0;
+    let heroTypingDetails = { timeout: null, interval: null, cycleTimeout: null };
+
+    // NOTE: HERO_PLACES is now loaded from hero-data.js
+
+    // --- Improved HTML Typing for Syntax Highlighting ---
+
+    function typeHeroHtml(html, elementId, speed = 10) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+
+      // Clear previous
+      if (heroTypingDetails.interval) clearInterval(heroTypingDetails.interval);
+
+      // 1. Set the full syntax-highlighted HTML immediately
+      el.innerHTML = html;
+
+      // 2. Find all Text Nodes in the DOM tree
+      const textNodes = [];
+      function collectTextNodes(node) {
+        if (node.nodeType === 3) { // Text node
+          // Only strictly text content that isn't just whitespace? 
+          // Actually we want all text to appear correctly spacing-wise.
+          textNodes.push({ node: node, fullText: node.nodeValue });
+          node.nodeValue = ''; // Clear it initially
+        } else {
+          node.childNodes.forEach(collectTextNodes);
+        }
+      }
+      collectTextNodes(el);
+
+      // 3. Animate revealing characters across all text nodes sequentially
+      let currentNodeIndex = 0;
+      let currentCharIndex = 0;
+
+      heroTypingDetails.interval = setInterval(() => {
+        // Stop if done
+        if (currentNodeIndex >= textNodes.length) {
+          clearInterval(heroTypingDetails.interval);
+          return;
+        }
+
+        const textNodeData = textNodes[currentNodeIndex];
+        const char = textNodeData.fullText.charAt(currentCharIndex);
+
+        textNodeData.node.nodeValue += char;
+        currentCharIndex++;
+
+        // Move to next node if finished current
+        if (currentCharIndex >= textNodeData.fullText.length) {
+          currentNodeIndex++;
+          currentCharIndex = 0;
+        }
+
+        // Auto-scroll (optional, keep bottom in view)
+        el.scrollTop = el.scrollHeight;
+
+      }, speed);
+    }
+
+    function runHeroCycle() {
+      if (typeof HERO_PLACES === 'undefined' || HERO_PLACES.length === 0) {
+        console.warn('HERO_PLACES not found or empty.');
+        return;
+      }
+
+      const p = HERO_PLACES[heroIndex];
+
+      // 1. Move Map & Marker
+      heroMap.flyTo([p.lat, p.lon], p.zoom, { duration: 3.0, easeLinearity: 0.25 });
+      heroMarker.setLatLng([p.lat, p.lon]);
+
+      // 2. Start Typing
+      if (heroTypingDetails.timeout) clearTimeout(heroTypingDetails.timeout);
+      heroTypingDetails.timeout = setTimeout(() => {
+        // Use regex or highlightGeon to get HTML first
+        // highlightGeon is defined below, ensure it is available or hoisted.
+        // JS functions are hoisted.
+        const highlightedHtml = highlightGeon(p.text);
+        typeHeroHtml(highlightedHtml, 'heroGeon', 5);
+      }, 500);
+
+      // 3. Schedule Next Cycle
+      heroIndex = (heroIndex + 1) % HERO_PLACES.length;
+
+      if (heroTypingDetails.cycleTimeout) clearTimeout(heroTypingDetails.cycleTimeout);
+      heroTypingDetails.cycleTimeout = setTimeout(runHeroCycle, 12000); // 12s per place
+    }
+
+    // Start Animation Loop once map is ready/loaded
+    heroMap.whenReady(() => {
+      // Small delay to ensure everything is rendered
+      setTimeout(runHeroCycle, 1000);
+    });
+
+    // ── Pipeline Init ─────────────────────────────────────────────────────────
 
     // Load first place immediately
     updateGeonPanel(PLACES[0]);
