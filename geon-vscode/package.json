@@ -1,0 +1,35 @@
+{
+    "name": "geon",
+    "displayName": "GEON Language Support",
+    "description": "Syntax highlighting and snippets for GEON (Geospatial Experience-Oriented Notation).",
+    "version": "0.1.0",
+    "publisher": "jameswilliams",
+    "engines": {
+        "vscode": "^1.75.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "geon",
+                "aliases": [
+                    "GEON",
+                    "geon"
+                ],
+                "extensions": [
+                    ".geon"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "geon",
+                "scopeName": "source.geon",
+                "path": "./syntaxes/geon.tmLanguage.json"
+            }
+        ]
+    }
+}

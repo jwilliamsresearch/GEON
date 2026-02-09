@@ -1,0 +1,64 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "GEON",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#strings"
+        },
+        {
+            "include": "#numbers"
+        },
+        {
+            "include": "#constants"
+        }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.number-sign.geon",
+                    "match": "\\s*#.*"
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.geon",
+                    "match": "\\b(PLACE|TYPE|ID|LOCATION|BOUNDARY|EXTENT|ELEVATION|AREA|PURPOSE|EXPERIENCE|CHARACTER|ADJACENCIES|CONNECTIVITY|CONTAINS|PART_OF|VIEWSHEDS|TEMPORAL|LIFESPAN|SOURCE|CONFIDENCE|UPDATED|BUILT_FORM|ECOLOGY|INFRASTRUCTURE|DEMOGRAPHICS|ECONOMY|VISUAL|HISTORY|VERTICAL_PROFILE):"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.unquoted.geon",
+                    "match": "(?<=:)\\s*[^#\n]+"
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.geon",
+                    "match": "\\b-?\\d+(\\.\\d+)?\\b"
+                }
+            ]
+        },
+        "constants": {
+            "patterns": [
+                {
+                    "name": "constant.language.geon",
+                    "match": "\\b(public_space|building|street|transport_hub|hybrid|landmark|natural_feature)\\b"
+                }
+            ]
+        }
+    },
+    "scopeName": "source.geon"
+}

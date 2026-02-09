@@ -1,0 +1,31 @@
+# This is a sample GEON file to test syntax highlighting
+
+PLACE: Syntax Evaluation Park
+TYPE: public_space
+ID: test:12345
+LOCATION: 51.5074, -0.1278
+
+PURPOSE:
+  - testing
+  - visualization
+
+EXPERIENCE:
+  openness: high
+  noise_level: very_quiet  # Comment at end of line
+
+CHARACTER:
+  - colorful
+  - structured
+
+ADJACENCIES:
+  - Debugger Window (immediate right)
+  - Output Panel (below)
+
+# Numeric tests
+AREA: 1500 sqm
+ELEVATION: 12.5m
+
+CONTAINS:
+  - PLACE: Nested Component
+    TYPE: building
+    LOCATION: 51.5075, -0.1279
