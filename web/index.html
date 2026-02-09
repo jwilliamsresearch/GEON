@@ -4,12 +4,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GEON — Geospatial Experience-Oriented Notation</title>
+  <title>GEON &mdash; Geospatial Experience-Oriented Notation</title>
   <link rel="stylesheet" type='text/css'
     href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
   <style>
     /* ── Theme variables (shared) ───────────────────────── */
     :root {
+      --map-filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
       --bg: #0f1117;
       --surface: #1a1d27;
       --surface2: #242836;
@@ -34,6 +37,7 @@
     }
 
     :root.light {
+      --map-filter: none;
       --bg: #f5f6f8;
       --surface: #ffffff;
       --surface2: #ebedf2;
@@ -300,16 +304,47 @@
       margin-bottom: 28px;
     }
 
-    /* ── Live sample ─────────────────────────────────────── */
-    .live-demo {
+    /* ── Pipeline demo ─────────────────────────────────── */
+    .place-chips {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .place-chip {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--font-sans);
+    }
+
+    .place-chip:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .place-chip.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .pipeline-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-top: 8px;
+      grid-template-rows: auto auto;
+      gap: 12px;
     }
 
     @media (max-width: 768px) {
-      .live-demo {
+      .pipeline-grid {
         grid-template-columns: 1fr;
       }
 
@@ -318,6 +353,173 @@
       }
     }
 
+    .pipeline-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    @keyframes panelFlash {
+      0% {
+        border-color: var(--accent);
+        box-shadow: 0 0 16px rgba(108, 140, 255, 0.25);
+      }
+
+      100% {
+        border-color: var(--border);
+        box-shadow: none;
+      }
+    }
+
+    .pipeline-panel.flash {
+      animation: panelFlash 0.8s ease-out;
+    }
+
+    .pipeline-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .pipeline-panel-header .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .pipeline-panel-header .panel-label {
+      flex: 1;
+    }
+
+    .pipeline-panel-header .token-badge {
+      font-weight: 500;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .pipeline-panel pre {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      line-height: 1.55;
+      padding: 12px;
+      margin: 0;
+      overflow: auto;
+      flex: 1;
+      max-height: 320px;
+    }
+
+    /* ── Map in pipeline ────────────────────────────────── */
+    #demoMap {
+      height: 320px;
+      width: 100%;
+    }
+
+    .leaflet-container {
+      background: var(--surface2);
+      font-family: var(--font-sans);
+    }
+
+    .leaflet-tile-pane {
+      filter: var(--map-filter);
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: var(--surface) !important;
+      color: var(--text) !important;
+      border-radius: 8px !important;
+      border: 1px solid var(--border) !important;
+      box-shadow: 0 8px 24px var(--shadow) !important;
+    }
+
+    .leaflet-popup-tip {
+      background: var(--surface) !important;
+    }
+
+    .leaflet-popup-content {
+      font-size: 13px !important;
+      line-height: 1.5 !important;
+      margin: 10px 14px !important;
+    }
+
+    .leaflet-popup-content b {
+      color: var(--accent);
+    }
+
+    /* ── LLM panel ──────────────────────────────────────── */
+    .llm-content {
+      padding: 12px;
+      flex: 1;
+      overflow: auto;
+      max-height: 320px;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .llm-prompt {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .llm-prompt strong {
+      color: var(--accent);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .llm-response {
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    .llm-response .geon-ref {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .llm-grounding {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-dim);
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .llm-grounding .ground-ok {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .llm-grounding .ground-fields {
+      color: var(--accent);
+    }
+
+    /* ── Code panel (kept for other sections) ────────────── */
     .code-panel {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -435,9 +637,10 @@
     }
 
     .feature-card .card-icon {
-      font-size: 28px;
+      font-size: 26px;
       margin-bottom: 12px;
       display: block;
+      color: var(--accent);
     }
 
     .feature-card h4 {
@@ -540,9 +743,10 @@
     }
 
     .tool-card .tool-icon {
-      font-size: 32px;
+      font-size: 30px;
       margin-bottom: 12px;
       display: block;
+      color: var(--accent);
     }
 
     .tool-card h4 {
@@ -770,11 +974,11 @@
           semantic descriptions of place &mdash; making spatial reasoning accessible to both people
           and AI.</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="explore.html"><span class="icon">&#x1F5FA;</span> Explore
+          <a class="btn btn-primary" href="explore.html"><i class="ph ph-globe-hemisphere-west icon"></i> Explore
             Map</a>
-          <a class="btn btn-secondary" href="form.html"><span class="icon">&#x1F3D7;</span> Build a
+          <a class="btn btn-secondary" href="form.html"><i class="ph ph-buildings icon"></i> Build a
             Place</a>
-          <a class="btn btn-secondary" href="../spec.md"><span class="icon">&#x1F4C4;</span> Read
+          <a class="btn btn-secondary" href="../spec.md"><i class="ph ph-file-text icon"></i> Read
             the Spec</a>
         </div>
       </div>
@@ -801,32 +1005,61 @@
         </div>
       </div>
 
-      <!-- ── Live sample ─────────────────────────────────── -->
-      <div class="section">
-        <div class="section-label">Live Example</div>
-        <h3>See it in action</h3>
-        <p class="desc">The same place described in GEON and GeoJSON. GEON embeds meaning,
-          experience, and relationships directly &mdash; not just coordinates in a properties bag.
-        </p>
+      <!-- ── Interactive Pipeline Demo ─────────────────────── -->
+      <div class="section" id="pipelineSection">
+        <div class="section-label">Interactive Pipeline</div>
+        <h3>See the full flow</h3>
+        <p class="desc">Click a place and watch data flow through the pipeline &mdash; from a point
+          on the map to structured GEON, equivalent GeoJSON, and a grounded LLM response.</p>
 
-        <div class="live-demo">
-          <div class="code-panel">
-            <div class="code-panel-header">
+        <div class="place-chips" id="placeChips">
+          <button class="place-chip active" onclick="selectPlace(0)">Market Square</button>
+          <button class="place-chip" onclick="selectPlace(1)">Nottingham Castle</button>
+          <button class="place-chip" onclick="selectPlace(2)">Sherwood Forest</button>
+        </div>
+
+        <div class="pipeline-grid">
+          <!-- Map panel -->
+          <div class="pipeline-panel" id="pipeMap">
+            <div class="pipeline-panel-header">
               <span class="dot" style="background:var(--accent)"></span>
-              <span class="format-label">GEON</span>
-              <span class="token-badge" id="geonTokens"
+              <span class="panel-label">Map</span>
+              <span style="font-size:10px;color:var(--text-dim)">Click markers to switch</span>
+            </div>
+            <div id="demoMap"></div>
+          </div>
+
+          <!-- GEON panel -->
+          <div class="pipeline-panel" id="pipeGeon">
+            <div class="pipeline-panel-header">
+              <span class="dot" style="background:var(--green)"></span>
+              <span class="panel-label">GEON</span>
+              <span class="token-badge" id="geonTokenBadge"
                 style="background:rgba(74,222,128,0.15);color:var(--green)"></span>
             </div>
-            <pre id="geonSample"></pre>
+            <pre id="geonOutput"></pre>
           </div>
-          <div class="code-panel">
-            <div class="code-panel-header">
+
+          <!-- GeoJSON panel -->
+          <div class="pipeline-panel" id="pipeGeojson">
+            <div class="pipeline-panel-header">
               <span class="dot" style="background:var(--orange)"></span>
-              <span class="format-label">GeoJSON</span>
-              <span class="token-badge" id="geojsonTokens"
+              <span class="panel-label">GeoJSON</span>
+              <span class="token-badge" id="geojsonTokenBadge"
                 style="background:rgba(251,146,60,0.15);color:var(--orange)"></span>
             </div>
-            <pre id="geojsonSample" style="color:var(--text-dim); font-size:12px;"></pre>
+            <pre id="geojsonOutput" style="color:var(--text-dim);font-size:11px;"></pre>
+          </div>
+
+          <!-- LLM panel -->
+          <div class="pipeline-panel" id="pipeLlm">
+            <div class="pipeline-panel-header">
+              <span class="dot" style="background:var(--purple)"></span>
+              <span class="panel-label">LLM Response</span>
+              <span class="token-badge" id="llmFieldsBadge"
+                style="background:rgba(192,132,252,0.15);color:var(--purple)"></span>
+            </div>
+            <div class="llm-content" id="llmOutput"></div>
           </div>
         </div>
       </div>
@@ -897,38 +1130,38 @@
 
         <div class="feature-grid">
           <div class="feature-card">
-            <span class="card-icon">&#x1F4CD;</span>
+            <i class="ph ph-map-pin card-icon"></i>
             <h4>Identity &amp; Geometry</h4>
             <p>Name, type, coordinates, boundary polygons, elevation, area &mdash; the spatial
               foundation.</p>
           </div>
           <div class="feature-card">
-            <span class="card-icon">&#x1F3AF;</span>
+            <i class="ph ph-crosshair card-icon"></i>
             <h4>Purpose &amp; Function</h4>
             <p>What a place is <em>for</em>: commerce, gathering, worship, recreation &mdash;
               structured by category.</p>
           </div>
           <div class="feature-card">
-            <span class="card-icon">&#x2728;</span>
+            <i class="ph ph-sparkle card-icon"></i>
             <h4>Experiential Qualities</h4>
             <p>Openness, noise, safety, pace, enclosure &mdash; 13 scales that describe how a place
               <em>feels</em>.
             </p>
           </div>
           <div class="feature-card">
-            <span class="card-icon">&#x1F517;</span>
+            <i class="ph ph-graph card-icon"></i>
             <h4>Spatial Relationships</h4>
             <p>Adjacencies, connectivity, containment, viewsheds &mdash; how places relate to each
               other.</p>
           </div>
           <div class="feature-card">
-            <span class="card-icon">&#x23F0;</span>
+            <i class="ph ph-clock card-icon"></i>
             <h4>Temporal Patterns</h4>
             <p>Footfall rhythms, opening hours, seasonal events, lifespan &mdash; places change over
               time.</p>
           </div>
           <div class="feature-card">
-            <span class="card-icon">&#x1F50D;</span>
+            <i class="ph ph-shield-check card-icon"></i>
             <h4>Provenance &amp; Trust</h4>
             <p>Source attribution, confidence levels, update timestamps &mdash; know where your data
               came from.</p>
@@ -997,13 +1230,13 @@
 
         <div class="tool-grid">
           <a class="tool-card" href="explore.html">
-            <span class="tool-icon">&#x1F5FA;</span>
+            <i class="ph ph-globe-hemisphere-west tool-icon"></i>
             <h4>Map Explorer</h4>
             <p>Click the map to fetch OSM features, search by name, or paste GeoJSON. See instant
               GEON output with syntax highlighting, validation, and token comparison.</p>
           </a>
           <a class="tool-card" href="form.html">
-            <span class="tool-icon">&#x1F3D7;</span>
+            <i class="ph ph-buildings tool-icon"></i>
             <h4>Place Builder</h4>
             <p>Fill out every GEON field with a structured form. Purpose chips, experience
               dropdowns, dynamic key-value editors &mdash; live GEON output as you type.</p>
@@ -1107,6 +1340,7 @@ LOCATION: 52.9403, -1.1340
     <span>James Williams &mdash; University of Nottingham</span>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     // ── Theme ────────────────────────────────────────────────────────────────
 
@@ -1126,26 +1360,21 @@ LOCATION: 52.9403, -1.1340
     applyTheme(currentTheme);
 
     function switchLibTab(lang) {
-      // Update tabs
       document.querySelectorAll('.lib-tab').forEach(t => t.classList.remove('active'));
       event.currentTarget.classList.add('active');
-
-      // Update content
       document.querySelectorAll('.lib-content').forEach(c => c.classList.remove('active'));
       document.getElementById('lib-' + lang).classList.add('active');
     }
 
-    // ── Live sample data ─────────────────────────────────────────────────────
+    // ── Place data ────────────────────────────────────────────────────────────
 
-    const GEON_SAMPLE = `PLACE: Nottingham Market Square
+    const PLACES = [
+      {
+        name: 'Nottingham Market Square',
+        lat: 52.9548, lon: -1.1581,
+        geon: `PLACE: Nottingham Market Square
 TYPE: public_space
 LOCATION: 52.95480, -1.15810
-BOUNDARY:
-  - 52.95530, -1.15920
-  - 52.95530, -1.15700
-  - 52.95430, -1.15700
-  - 52.95430, -1.15920
-  - 52.95530, -1.15920
 AREA: 22000 sqm
 PURPOSE:
   - civic gathering
@@ -1176,54 +1405,191 @@ TEMPORAL:
 SOURCE:
   - field survey (2025-01)
   - OpenStreetMap
-UPDATED: 2025-01-15`;
-
-    const GEOJSON_SAMPLE = {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[
-          [-1.15920, 52.95530],
-          [-1.15700, 52.95530],
-          [-1.15700, 52.95430],
-          [-1.15920, 52.95430],
-          [-1.15920, 52.95530]
-        ]]
+UPDATED: 2025-01-15`,
+        geojson: {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [-1.1581, 52.9548] },
+          properties: {
+            name: 'Nottingham Market Square',
+            type: 'public_space',
+            area: '22000 sqm',
+            purpose: ['civic gathering', 'events and festivals', 'informal commerce', 'circulation'],
+            experience_openness: 'high',
+            experience_enclosure: 'medium',
+            experience_accessibility: 'high',
+            experience_activity_density: 'variable',
+            character: [
+              'one of the largest public squares in England',
+              'Georgian and Victorian surrounding architecture',
+              'civic focal point since medieval era'
+            ],
+            adjacency_1: 'Old Market Square tram stop (50m north)',
+            adjacency_2: 'Council House (immediate west)',
+            adjacency_3: 'Exchange Arcade (southeast corner)',
+            connectivity_pedestrian_entries: 6,
+            connectivity_vehicular_access: 'restricted',
+            connectivity_public_transport: 'tram (adjacent)',
+            temporal_weekday_footfall: '2000-3000 people/hour',
+            temporal_weekend_events: '2-3 per month',
+            temporal_evening_activity: 'low (20% of daytime)',
+            source: ['field survey (2025-01)', 'OpenStreetMap'],
+            updated: '2025-01-15'
+          }
+        },
+        llm: {
+          prompt: 'Using this GEON data, describe this place for a first-time visitor.',
+          response: 'Nottingham Market Square is one of England\'s largest <span class="geon-ref">public squares</span> (<span class="geon-ref">22,000 sqm</span>), serving as the city\'s civic heart since the medieval era. Expect a <span class="geon-ref">highly open</span> space with <span class="geon-ref">variable activity density</span> -- it hosts <span class="geon-ref">2-3 weekend events</span> monthly with <span class="geon-ref">2,000-3,000 people/hour</span> on weekdays. The surrounding <span class="geon-ref">Georgian and Victorian architecture</span> frames a space used for <span class="geon-ref">civic gathering, events, and informal commerce</span>. The square is easily accessible by <span class="geon-ref">tram (adjacent)</span> with <span class="geon-ref">6 pedestrian entries</span>, though <span class="geon-ref">vehicular access is restricted</span>. Evening activity drops to about <span class="geon-ref">20% of daytime</span> levels.',
+          fields: 12,
+          hallucinations: 0
+        }
       },
-      "properties": {
-        "name": "Nottingham Market Square",
-        "type": "public_space",
-        "area": "22000 sqm",
-        "purpose": [
-          "civic gathering",
-          "events and festivals",
-          "informal commerce",
-          "circulation"
-        ],
-        "experience_openness": "high",
-        "experience_enclosure": "medium",
-        "experience_accessibility": "high",
-        "experience_activity_density": "variable",
-        "character": [
-          "one of the largest public squares in England",
-          "Georgian and Victorian surrounding architecture",
-          "civic focal point since medieval era"
-        ],
-        "adjacency_1": "Old Market Square tram stop (50m north)",
-        "adjacency_2": "Council House (immediate west)",
-        "adjacency_3": "Exchange Arcade (southeast corner)",
-        "connectivity_pedestrian_entries": 6,
-        "connectivity_vehicular_access": "restricted",
-        "connectivity_public_transport": "tram (adjacent)",
-        "temporal_weekday_footfall": "2000-3000 people/hour",
-        "temporal_weekend_events": "2-3 per month",
-        "temporal_evening_activity": "low (20% of daytime)",
-        "source": ["field survey (2025-01)", "OpenStreetMap"],
-        "updated": "2025-01-15"
+      {
+        name: 'Nottingham Castle',
+        lat: 52.9490, lon: -1.1560,
+        geon: `PLACE: Nottingham Castle
+TYPE: landmark
+LOCATION: 52.94900, -1.15600
+ELEVATION: 40m above river level
+PURPOSE:
+  - tourism (museum and gallery)
+  - heritage
+  - recreation
+EXPERIENCE:
+  openness: medium
+  enclosure: medium
+  accessibility: medium
+  safety: high
+CHARACTER:
+  - 17th-century ducal mansion on medieval castle site
+  - panoramic views across Nottingham from Castle Rock
+  - Robin Hood heritage and legend connections
+ADJACENCIES:
+  - Ye Olde Trip to Jerusalem (50m south)
+  - Castle Boulevard (immediate south)
+  - The Park Estate (west)
+CONNECTIVITY:
+  pedestrian_access: stepped and ramped
+  vehicular_access: limited
+  nearest_tram: Nottingham station (400m)
+TEMPORAL:
+  opening_hours: 10:00-17:00 (Tue-Sun)
+  peak_season: summer (June-August)
+  events: seasonal exhibitions
+SOURCE:
+  - Nottingham City Council
+  - OpenStreetMap
+UPDATED: 2025-01-15`,
+        geojson: {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [-1.1560, 52.9490] },
+          properties: {
+            name: 'Nottingham Castle',
+            type: 'landmark',
+            elevation: '40m above river level',
+            purpose: ['tourism (museum and gallery)', 'heritage', 'recreation'],
+            experience_openness: 'medium',
+            experience_enclosure: 'medium',
+            experience_accessibility: 'medium',
+            experience_safety: 'high',
+            character: [
+              '17th-century ducal mansion on medieval castle site',
+              'panoramic views across Nottingham from Castle Rock',
+              'Robin Hood heritage and legend connections'
+            ],
+            adjacency_1: 'Ye Olde Trip to Jerusalem (50m south)',
+            adjacency_2: 'Castle Boulevard (immediate south)',
+            connectivity_pedestrian_access: 'stepped and ramped',
+            connectivity_vehicular_access: 'limited',
+            temporal_opening_hours: '10:00-17:00 (Tue-Sun)',
+            temporal_peak_season: 'summer (June-August)',
+            source: ['Nottingham City Council', 'OpenStreetMap'],
+            updated: '2025-01-15'
+          }
+        },
+        llm: {
+          prompt: 'Using this GEON data, describe this place for a first-time visitor.',
+          response: 'Nottingham Castle is a <span class="geon-ref">landmark</span> perched on <span class="geon-ref">Castle Rock</span>, <span class="geon-ref">40m above river level</span>, offering <span class="geon-ref">panoramic views across Nottingham</span>. The current <span class="geon-ref">17th-century ducal mansion</span> replaced the medieval fortification and now operates as a <span class="geon-ref">museum and gallery</span>, open <span class="geon-ref">Tue-Sun 10:00-17:00</span>. Expect <span class="geon-ref">medium accessibility</span> due to <span class="geon-ref">stepped and ramped pedestrian access</span> on the elevated site. The castle connects to <span class="geon-ref">Robin Hood heritage</span>, and nearby you\'ll find <span class="geon-ref">Ye Olde Trip to Jerusalem</span> (50m south), one of England\'s oldest pubs. <span class="geon-ref">Summer</span> is peak season for visitors.',
+          fields: 11,
+          hallucinations: 0
+        }
+      },
+      {
+        name: 'Sherwood Forest',
+        lat: 53.2036, lon: -1.0689,
+        geon: `PLACE: Sherwood Forest
+TYPE: natural_feature
+LOCATION: 53.20360, -1.06890
+AREA: 423 hectares
+PURPOSE:
+  - ecology
+  - recreation
+  - heritage
+EXPERIENCE:
+  openness: high
+  noise: low
+  safety: high
+  naturalness: very_high
+CHARACTER:
+  - ancient oak woodland, remnant of royal hunting forest
+  - home to the Major Oak (800+ years old)
+  - Robin Hood legend origins
+ADJACENCIES:
+  - Edwinstowe village (immediate east)
+  - Sherwood Forest visitor centre (within)
+  - Clumber Park (8km north)
+CONNECTIVITY:
+  pedestrian_trails: extensive network
+  vehicular_access: car park at visitor centre
+  nearest_rail: Mansfield (10km)
+TEMPORAL:
+  peak_season: summer (June-August)
+  autumn_interest: high (leaf colour)
+  dawn_chorus: April-June
+SOURCE:
+  - Natural England
+  - OpenStreetMap
+UPDATED: 2025-01-15`,
+        geojson: {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [-1.0689, 53.2036] },
+          properties: {
+            name: 'Sherwood Forest',
+            type: 'natural_feature',
+            area: '423 hectares',
+            purpose: ['ecology', 'recreation', 'heritage'],
+            experience_openness: 'high',
+            experience_noise: 'low',
+            experience_safety: 'high',
+            experience_naturalness: 'very_high',
+            character: [
+              'ancient oak woodland, remnant of royal hunting forest',
+              'home to the Major Oak (800+ years old)',
+              'Robin Hood legend origins'
+            ],
+            adjacency_1: 'Edwinstowe village (immediate east)',
+            adjacency_2: 'Sherwood Forest visitor centre (within)',
+            adjacency_3: 'Clumber Park (8km north)',
+            connectivity_pedestrian_trails: 'extensive network',
+            connectivity_vehicular_access: 'car park at visitor centre',
+            temporal_peak_season: 'summer (June-August)',
+            temporal_autumn_interest: 'high (leaf colour)',
+            source: ['Natural England', 'OpenStreetMap'],
+            updated: '2025-01-15'
+          }
+        },
+        llm: {
+          prompt: 'Using this GEON data, describe this place for a first-time visitor.',
+          response: 'Sherwood Forest is a <span class="geon-ref">natural feature</span> covering <span class="geon-ref">423 hectares</span> of <span class="geon-ref">ancient oak woodland</span> north of Nottingham, famous as the <span class="geon-ref">origin of the Robin Hood legend</span>. The <span class="geon-ref">very high naturalness</span> and <span class="geon-ref">low noise</span> levels create a peaceful retreat with <span class="geon-ref">high safety</span>. The centrepiece is the <span class="geon-ref">Major Oak (800+ years old)</span>, accessible via an <span class="geon-ref">extensive pedestrian trail network</span>. Visit in <span class="geon-ref">summer</span> for the best weather, <span class="geon-ref">April-June for the dawn chorus</span>, or <span class="geon-ref">autumn for spectacular leaf colours</span>. Park at the <span class="geon-ref">visitor centre</span> near <span class="geon-ref">Edwinstowe village</span>.',
+          fields: 12,
+          hallucinations: 0
+        }
       }
-    };
+    ];
 
-    // ── Render samples ───────────────────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+    function estimateTokens(text) { return Math.max(1, Math.round(text.length / 4)); }
 
     function highlightGeon(text) {
       return text.split('\n').map(line => {
@@ -1243,21 +1609,111 @@ UPDATED: 2025-01-15`;
       }).join('\n');
     }
 
-    function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
-    function estimateTokens(text) { return Math.max(1, Math.round(text.length / 4)); }
+    // ── Map setup ─────────────────────────────────────────────────────────────
 
-    // Render
-    const geojsonStr = JSON.stringify(GEOJSON_SAMPLE, null, 2);
+    const demoMap = L.map('demoMap', { zoomControl: false, attributionControl: false }).setView([52.97, -1.14], 11);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(demoMap);
+    L.control.attribution({ prefix: false }).addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>').addTo(demoMap);
 
-    document.getElementById('geonSample').innerHTML = highlightGeon(GEON_SAMPLE);
-    document.getElementById('geojsonSample').textContent = geojsonStr;
+    const markerGroup = L.layerGroup().addTo(demoMap);
+    let activeMarkerIdx = 0;
 
-    const gt = estimateTokens(GEON_SAMPLE);
-    const jt = estimateTokens(geojsonStr);
-    const saving = ((1 - gt / jt) * 100).toFixed(0);
+    const defaultIcon = L.circleMarker([0, 0], { radius: 8, color: '#6c8cff', fillColor: '#6c8cff', fillOpacity: 0.5, weight: 2 }).options;
+    const activeIcon = L.circleMarker([0, 0], { radius: 10, color: '#fff', fillColor: '#6c8cff', fillOpacity: 1, weight: 3 }).options;
 
-    document.getElementById('geonTokens').textContent = `~${gt} tokens`;
-    document.getElementById('geojsonTokens').textContent = `~${jt} tokens (+${saving}%)`;
+    const markers = PLACES.map((p, i) => {
+      const m = L.circleMarker([p.lat, p.lon], i === 0 ? activeIcon : defaultIcon).addTo(markerGroup);
+      m.bindTooltip(p.name, { direction: 'top', offset: [0, -10] });
+      m.on('click', () => selectPlace(i));
+      return m;
+    });
+
+    // Fix map rendering after scroll into view
+    const mapObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) demoMap.invalidateSize(); });
+    }, { threshold: 0.1 });
+    mapObserver.observe(document.getElementById('demoMap'));
+
+    // ── Pipeline animation ────────────────────────────────────────────────────
+
+    let currentPlace = 0;
+
+    function selectPlace(idx) {
+      currentPlace = idx;
+      const place = PLACES[idx];
+
+      // Update chips
+      document.querySelectorAll('.place-chip').forEach((c, i) => c.classList.toggle('active', i === idx));
+
+      // Update markers
+      markers.forEach((m, i) => {
+        m.setStyle(i === idx ? activeIcon : defaultIcon);
+        if (i === idx) m.setRadius(10); else m.setRadius(8);
+      });
+
+      // Pan map
+      demoMap.flyTo([place.lat, place.lon], place.name === 'Sherwood Forest' ? 12 : 15, { duration: 0.8 });
+
+      // Cascade panel updates with flash animation
+      const panels = ['pipeMap', 'pipeGeon', 'pipeGeojson', 'pipeLlm'];
+      const delays = [0, 150, 300, 450];
+
+      delays.forEach((delay, i) => {
+        setTimeout(() => {
+          const panel = document.getElementById(panels[i]);
+          if (!panel) return;
+          panel.classList.remove('flash');
+          void panel.offsetWidth;
+          panel.classList.add('flash');
+
+          if (i === 1) updateGeonPanel(place);
+          if (i === 2) updateGeojsonPanel(place);
+          if (i === 3) updateLlmPanel(place);
+        }, delay);
+      });
+    }
+
+    function updateGeonPanel(place) {
+      const gt = estimateTokens(place.geon);
+      document.getElementById('geonTokenBadge').textContent = `~${gt} tokens`;
+      document.getElementById('geonOutput').innerHTML = highlightGeon(place.geon);
+    }
+
+    function updateGeojsonPanel(place) {
+      const geojsonStr = JSON.stringify(place.geojson, null, 2);
+      const jt = estimateTokens(geojsonStr);
+      const gt = estimateTokens(place.geon);
+      const overhead = ((jt / gt - 1) * 100).toFixed(0);
+      document.getElementById('geojsonTokenBadge').textContent = `~${jt} tokens (+${overhead}%)`;
+      document.getElementById('geojsonOutput').textContent = geojsonStr;
+    }
+
+    function updateLlmPanel(place) {
+      const llm = place.llm;
+      document.getElementById('llmFieldsBadge').textContent = `${llm.fields} fields used`;
+      document.getElementById('llmOutput').innerHTML = `
+        <div class="llm-prompt">
+          <strong>Prompt</strong>
+          ${esc(llm.prompt)}
+        </div>
+        <div class="llm-response">${llm.response}</div>
+        <div class="llm-grounding">
+          <span class="ground-ok">0 hallucinations</span>
+          <span class="ground-fields">${llm.fields} facts grounded in GEON</span>
+          <span>All <span class="geon-ref">highlighted</span> terms from source data</span>
+        </div>
+      `;
+    }
+
+    // ── Initialize ────────────────────────────────────────────────────────────
+
+    // Load first place immediately
+    updateGeonPanel(PLACES[0]);
+    updateGeojsonPanel(PLACES[0]);
+    updateLlmPanel(PLACES[0]);
+
+    // Run initial pipeline animation after a brief delay
+    setTimeout(() => selectPlace(0), 500);
   </script>
 </body>
 

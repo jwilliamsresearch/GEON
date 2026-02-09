@@ -55,3 +55,6 @@ dist/
 .cache/
 .parcel-cache/
 coverage/
+nul
+paper/main.tex
+paper/references.bib
